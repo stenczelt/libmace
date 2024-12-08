@@ -42,7 +42,6 @@ jobs:
       - name: Download libtorch (CPU)
         id: libtorch
         shell: bash
-        if: ${{ matrix.device == 'cpu' }}
         run: |
           case ${{ matrix.device }} in
             "cpu")
