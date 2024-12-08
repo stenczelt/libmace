@@ -39,23 +39,24 @@ jobs:
           echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
       - name: Download libtorch
+        id: libtorch
         shell: bash
         if: ${{ matrix.device == 'cpu' }}
         run: |
           wget "https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.1.0%2Bcpu.zip"
           echo "04f699d5181048b0062ef52de1df44b46859b8fbeeee12abdbcb9aac63e2a14b libtorch-cxx11-abi-shared-with-deps-2.1.0+cpu.zip" | sha256sum -c -
           unzip libtorch-cxx11-abi-shared-with-deps-2.1.0+cpu.zip
-          echo "LIBTORCH=$(realpath libtorch)" >> $GITHUB_ENV
-          echo "LD_LIBRARY_PATH=$(realpath libtorch)/lib" >> $GITHUB_ENV
+          echo "path=$(realpath libtorch)" >> "$GITHUB_OUTPUT"
           rm libtorch-cxx11-abi-shared-with-deps-2.1.0+cpu.zip
 
       - name: Configure CMake
         run: >
-          cmake -B ${{ steps.strings.outputs.build-output-dir }}
+          cmake -B ${{ steps.libtorch.outputs.path }}
           -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
           -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
           -DCMAKE_FORTRAN_COMPILER=${{ matrix.ftn_compiler }}
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DCMAKE_PREFIX_PATH=${{ steps.strings.outputs.build-output-dir }}
           -S ${{ github.workspace }}
 
       - name: Build
