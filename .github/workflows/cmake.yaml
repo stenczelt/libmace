@@ -48,6 +48,7 @@ jobs:
         if: ${{ matrix.device == 'cuda' }}
         with:
           cuda: '12.1.0'
+          method: 'network'
 
       - name: Download libtorch
         id: libtorch
@@ -93,8 +94,8 @@ jobs:
           -S ${{ github.workspace }}
 
       - name: Build
-        run: cmake --build ${{ steps.strings.outputs.build-output-dir }}
+        run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ env.build_type }}
 
       - name: Test
         working-directory: ${{ steps.strings.outputs.build-output-dir }}
-        run: ctest --build-config ${{ matrix.build_type }}
+        run: ctest --build-config ${{ env.build_type }}
