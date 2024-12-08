@@ -54,7 +54,7 @@ jobs:
           wget -q "https://download.pytorch.org/libtorch/cu121/libtorch-cxx11-abi-shared-with-deps-2.1.0%2Bcu121.zip"
           unzip -q libtorch-cxx11-abi-shared-with-deps-2.1.0%2Bcu121.zip
           rm libtorch-cxx11-abi-shared-with-deps-2.1.0%2Bcu121.zip
-          rm libtorch-cxx11-abi-shared-with-deps-2.1.0%2Bcu121.zip
+          echo "path=$(realpath libtorch)" >> "$GITHUB_OUTPUT"
 
       - name: DEBUG
         run: |
