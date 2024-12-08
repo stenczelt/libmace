@@ -44,7 +44,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 include_directories(include)
 
 # C++ source files
-set(SOURCES src/library.cpp src/neighbour_list.cpp src/mace.cpp)
+set(SOURCES src/neighbour_list.cpp src/mace.cpp)
 
 # mace library
 add_library(mace STATIC ${SOURCES})
