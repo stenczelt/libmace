@@ -28,6 +28,7 @@ jobs:
             c_compiler: clang
             cpp_compiler: clang++
             ftn_compiler: gfortran
+            device: cpu
 
     steps:
       - uses: actions/checkout@v4
@@ -48,6 +49,7 @@ jobs:
           rm libtorch-cxx11-abi-shared-with-deps-2.1.0+cpu.zip
           echo "path=$(realpath libtorch)" >> "$GITHUB_OUTPUT"
       - name: Download libtorch (CUDA)
+        id: libtorch
         shell: bash
         if: ${{ matrix.device == 'cuda' }}
         run: |
@@ -58,8 +60,8 @@ jobs:
 
       - name: DEBUG
         run: |
-          echo ${{ steps.strings.outputs.build-output-dir }}
-          echo ${{ steps.libtorch.outputs.path }}
+          echo steps.strings.outputs.build-output-dir: ${{ steps.strings.outputs.build-output-dir }}
+          echo steps.libtorch.outputs.path: ${{ steps.libtorch.outputs.path }}
 
 
       - name: Configure CMake
