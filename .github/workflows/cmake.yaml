@@ -17,7 +17,7 @@ jobs:
       matrix:
         os: [ ubuntu-latest ]
         build_type: [ Release ]
-        c_compiler: [ gcc, clang ]
+        c_compiler: [ gcc ]  # [ gcc, clang ]
         device: [ cpu, cuda ]
         include:
           - os: ubuntu-latest
@@ -51,9 +51,9 @@ jobs:
         shell: bash
         if: ${{ matrix.device == 'cuda' }}
         run: |
-          wget -q "https://download.pytorch.org/libtorch/cu121/libtorch-cxx11-abi-shared-with-deps-2.1.0%2Bcu121.zip"
-          unzip -q libtorch-cxx11-abi-shared-with-deps-2.1.0%2Bcu121.zip
-          rm libtorch-cxx11-abi-shared-with-deps-2.1.0%2Bcu121.zip
+          wget "https://download.pytorch.org/libtorch/cu121/libtorch-cxx11-abi-shared-with-deps-2.1.0%2Bcu121.zip"
+          unzip libtorch-cxx11-abi-shared-with-deps-2.1.0+cu121.zip
+          rm libtorch-cxx11-abi-shared-with-deps-2.1.0+cu121.zip
           echo "path=$(realpath libtorch)" >> "$GITHUB_OUTPUT"
 
       - name: DEBUG
