@@ -52,6 +52,7 @@ jobs:
               ;;
             "cuda")
               LIBTORCH_URL="https://download.pytorch.org/libtorch/cu121/libtorch-cxx11-abi-shared-with-deps-2.1.0%2Bcu121.zip"
+              echo "cmake_flags=-DUSE_CUDA=ON" >> "$GITHUB_OUTPUT"
               ;;
             *)
             echo -n "unknown option for device"
@@ -81,6 +82,7 @@ jobs:
           -DCMAKE_FORTRAN_COMPILER=${{ matrix.ftn_compiler }}
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           -DCMAKE_PREFIX_PATH=${{ steps.libtorch.outputs.path }}
+          ${{ steps.libtorch.outputs.cmake_flags }}
           -S ${{ github.workspace }}
 
       - name: Build
