@@ -37,6 +37,17 @@ jobs:
         run: |
           echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
+      - name: Download libtorch
+        run: |
+          wget "https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.1.0%2Bcpu.zip"
+          echo "04f699d5181048b0062ef52de1df44b46859b8fbeeee12abdbcb9aac63e2a14b libtorch-cxx11-abi-shared-with-deps-2.1.0+cpu.zip" | sha256sum -c -
+          unzip libtorch-cxx11-abi-shared-with-deps-2.1.0+cpu.zip
+          echo "LIBTORCH=$(realpath libtorch)" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=$(realpath libtorch)/lib" >> $GITHUB_ENV
+          rm libtorch-cxx11-abi-shared-with-deps-2.1.0+cpu.zip
+        shell: bash
+        if: ${{ inputs.device == 'cpu' }}
+
       - name: Configure CMake
         run: >
           cmake -B ${{ steps.strings.outputs.build-output-dir }}
