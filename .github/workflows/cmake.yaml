@@ -22,9 +22,11 @@ jobs:
           - os: ubuntu-latest
             c_compiler: gcc
             cpp_compiler: g++
+            ftn_compiler: gfortran
           - os: ubuntu-latest
             c_compiler: clang
             cpp_compiler: clang++
+            ftn_compiler: gfortran
 
     steps:
       - uses: actions/checkout@v4
@@ -40,6 +42,7 @@ jobs:
           cmake -B ${{ steps.strings.outputs.build-output-dir }}
           -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
           -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+          -DCMAKE_FORTRAN_COMPILER=${{ matrix.ftn_compiler }}
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           -S ${{ github.workspace }}
 
