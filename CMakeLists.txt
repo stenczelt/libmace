@@ -9,12 +9,11 @@ set(CMAKE_CXX_STANDARD 17)
 set(CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-
 # public headers
 include_directories(include)
 
 # C++ source files
-set(SOURCES src/library.cpp)
+set(SOURCES src/library.cpp src/arrays.h)
 
 # mace library
 add_library(mace STATIC ${SOURCES})
