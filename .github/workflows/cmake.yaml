@@ -49,7 +49,7 @@ jobs:
           echo "path=$(realpath libtorch)" >> "$GITHUB_OUTPUT"
       - name: Download libtorch (CUDA)
         shell: bash
-        if: ${{ inputs.device == 'cuda' }}
+        if: ${{ matrix.device == 'cuda' }}
         run: |
           wget -q "https://download.pytorch.org/libtorch/cu121/libtorch-cxx11-abi-shared-with-deps-2.1.0%2Bcu121.zip"
           unzip -q libtorch-cxx11-abi-shared-with-deps-2.1.0%2Bcu121.zip
