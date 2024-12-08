@@ -58,7 +58,7 @@ jobs:
           esac  
 
           # download & extract libtorch
-          wget -q $LIBTORCH_URL -o libtorch.zip
+          wget -q $LIBTORCH_URL -O libtorch.zip
           unzip -q libtorch.zip
           rm libtorch.zip
           
