@@ -42,6 +42,13 @@ jobs:
         run: |
           echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
+      - name: Install CUDA toolkit
+        uses: Jimver/cuda-toolkit@master
+        id: cuda-toolkit
+        if: ${{ matrix.device == 'cuda' }}
+        with:
+          cuda: '12.1.0'
+
       - name: Download libtorch
         id: libtorch
         shell: bash
@@ -86,7 +93,7 @@ jobs:
           -S ${{ github.workspace }}
 
       - name: Build
-        run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ env.build_type }}
+        run: cmake --build ${{ steps.strings.outputs.build-output-dir }}
 
       - name: Test
         working-directory: ${{ steps.strings.outputs.build-output-dir }}
