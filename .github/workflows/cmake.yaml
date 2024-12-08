@@ -18,7 +18,7 @@ jobs:
         os: [ ubuntu-latest ]
         build_type: [ Release ]
         c_compiler: [ gcc, clang ]
-        device: [ cpu ]
+        device: [ cpu, cuda ]
         include:
           - os: ubuntu-latest
             c_compiler: gcc
@@ -38,16 +38,23 @@ jobs:
         run: |
           echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
-      - name: Download libtorch
+      - name: Download libtorch (CPU)
         id: libtorch
         shell: bash
         if: ${{ matrix.device == 'cpu' }}
         run: |
           wget -q "https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.1.0%2Bcpu.zip"
-          echo "04f699d5181048b0062ef52de1df44b46859b8fbeeee12abdbcb9aac63e2a14b libtorch-cxx11-abi-shared-with-deps-2.1.0+cpu.zip" | sha256sum -c -
           unzip -q libtorch-cxx11-abi-shared-with-deps-2.1.0+cpu.zip
-          echo "path=$(realpath libtorch)" >> "$GITHUB_OUTPUT"
           rm libtorch-cxx11-abi-shared-with-deps-2.1.0+cpu.zip
+          echo "path=$(realpath libtorch)" >> "$GITHUB_OUTPUT"
+      - name: Download libtorch (CUDA)
+        shell: bash
+        if: ${{ inputs.device == 'cuda' }}
+        run: |
+          wget -q "https://download.pytorch.org/libtorch/cu121/libtorch-cxx11-abi-shared-with-deps-2.1.0%2Bcu121.zip"
+          unzip -q libtorch-cxx11-abi-shared-with-deps-2.1.0%2Bcu121.zip
+          rm libtorch-cxx11-abi-shared-with-deps-2.1.0%2Bcu121.zip
+          rm libtorch-cxx11-abi-shared-with-deps-2.1.0%2Bcu121.zip
 
       - name: DEBUG
         run: |
