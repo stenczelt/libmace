@@ -13,7 +13,9 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 include_directories(include)
 
 # C++ source files
-set(SOURCES src/library.cpp src/arrays.h)
+set(SOURCES src/library.cpp src/neighbour_list.cpp)
 
 # mace library
 add_library(mace STATIC ${SOURCES})
+target_include_directories(mace PRIVATE include)
+target_include_directories(mace PRIVATE src)

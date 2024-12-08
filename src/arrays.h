@@ -11,6 +11,7 @@
 
 #include <array>
 #include <iostream>
+#include <vector>
 
 // Type definitions for arrays
 template<typename T, std::size_t num>
@@ -59,5 +60,18 @@ template<typename T, std::size_t Row, std::size_t Col>
 void printArray(const array2d<T, Row, Col> &arr) {
     for (const auto &arow: arr) printArray(arow);
 }
+
+template<typename T>
+void printVector(const std::vector<T> &arr) {
+    std::cout << '[';
+    for (const auto &e: arr) std::cout << e << ", ";
+    std::cout << "]\n";
+}
+
+template<typename T, std::size_t num>
+void printVector(const std::vector<std::array<T, num> > &arr) {
+    for (const auto &arow: arr) printArray(arow);
+}
+
 
 #endif //MACE_ARRAYS_H
