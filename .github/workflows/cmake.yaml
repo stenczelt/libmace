@@ -44,18 +44,25 @@ jobs:
         shell: bash
         if: ${{ matrix.device == 'cpu' }}
         run: |
-          wget -q "https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.1.0%2Bcpu.zip"
-          unzip -q libtorch-cxx11-abi-shared-with-deps-2.1.0+cpu.zip
-          rm libtorch-cxx11-abi-shared-with-deps-2.1.0+cpu.zip
-          echo "path=$(realpath libtorch)" >> "$GITHUB_OUTPUT"
-      - name: Download libtorch (CUDA)
-        id: libtorch
-        shell: bash
-        if: ${{ matrix.device == 'cuda' }}
-        run: |
-          wget "https://download.pytorch.org/libtorch/cu121/libtorch-cxx11-abi-shared-with-deps-2.1.0%2Bcu121.zip"
-          unzip libtorch-cxx11-abi-shared-with-deps-2.1.0+cu121.zip
-          rm libtorch-cxx11-abi-shared-with-deps-2.1.0+cu121.zip
+          case ${{ matrix.device }} in
+            "cpu")
+              LIBTORCH_URL="https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.1.0%2Bcpu.zip"
+              ;;
+            "cuda")
+              LIBTORCH_URL="https://download.pytorch.org/libtorch/cu121/libtorch-cxx11-abi-shared-with-deps-2.1.0%2Bcu121.zip"
+              ;;
+            *)
+            echo -n "unknown option for device"
+            exit 1
+            ;;
+          esac  
+
+          # download & extract libtorch
+          wget -q $LIBTORCH_URL -o libtorch.zip
+          unzip -q libtorch.zip
+          rm libtorch.zip
+          
+          # save path for later steps
           echo "path=$(realpath libtorch)" >> "$GITHUB_OUTPUT"
 
       - name: DEBUG
