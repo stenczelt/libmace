@@ -54,5 +54,27 @@ target_link_libraries(mace PUBLIC "${TORCH_LIBRARIES}")
 
 
 # -----------------------------------------------------------------------------
+# Tests
+# -----------------------------------------------------------------------------
+include(FetchContent)
+# Avoid warning about DOWNLOAD_EXTRACT_TIMESTAMP in CMake 3.24:
+if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.24.0")
+    cmake_policy(SET CMP0135 NEW)
+endif ()
+FetchContent_Declare(
+        googletest
+        URL https://github.com/google/googletest/archive/35d0c365609296fa4730d62057c487e3cfa030ff.zip
+)
+FetchContent_MakeAvailable(googletest)
+
+enable_testing()
+
+add_executable(hello_test tests/hello_test.cc)
+target_link_libraries(hello_test GTest::gtest_main)
+include(GoogleTest)
+gtest_discover_tests(hello_test)
+
+
+# -----------------------------------------------------------------------------
 # Installation & other settings
 # -----------------------------------------------------------------------------
