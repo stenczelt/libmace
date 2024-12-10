@@ -46,6 +46,17 @@ neighbour_list compute_neighbour_list(
     const std::vector<int> &types
 );
 
+// internal functions, added now so we can test them
+real1d<3> cross_product(const real1d<3> &a, const real1d<3> &b);
+
+double normsq(const real1d<3> &a);
+
+template<std::size_t len>
+double dot(real1d<len> a, real1d<len> b);
+
+real1d<3> mat_mul_vec(const real2d<3, 3> &mat, const real1d<3> &vec);
+
+bool string_conatins(const std::string &s, char letter);
 
 
 #endif //NEIGHBOURS_H
