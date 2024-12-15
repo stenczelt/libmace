@@ -1,8 +1,12 @@
 //
 // Created by Tamas K Stenczel on 29/06/2024.
 //
+// Based on the Python/C neighbour list at [1] adapted to C++ and without the Python/Numpy types.
+//
+// References:
+// [1] https://github.com/libAtoms/matscipy-neighbours
+//
 
-// matscipy's neighbour list re-implemented without reference to Python
 
 #ifndef NEIGHBOURS_H
 #define NEIGHBOURS_H
