@@ -58,9 +58,12 @@ double normsq(const real1d<3> &a);
 template<std::size_t len>
 double dot(real1d<len> a, real1d<len> b);
 
-real1d<3> mat_mul_vec(const real2d<3, 3> &mat, const real1d<3> &vec);
+template<std::size_t n, std::size_t m>
+real1d<n> mat_mul_vec(const real2d<n, m> &mat, const real1d<m> &vec);
 
 bool string_contains(const std::string &s, char letter);
 
+real2d<3, 3>
+inverse_transpose_3x3(const real2d<3, 3> &matrix);
 
 #endif //NEIGHBOURS_H

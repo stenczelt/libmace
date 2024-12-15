@@ -46,10 +46,11 @@ dot(real1d<len> a, real1d<len> b) {
     return result;
 }
 
-real1d<3> mat_mul_vec(const real2d<3, 3> &mat, const real1d<3> &vec) {
-    // functional version of mat_mul_vec from tools.c
-    real1d<3> result;
-    for (int i = 0; i < 3; i++) {
+template<std::size_t n, std::size_t m>
+real1d<n> mat_mul_vec(const real2d<n, m> &mat, const real1d<m> &vec) {
+    // function version of mat_mul_vec from tools.c
+    real1d<n> result;
+    for (int i = 0; i < n; i++) {
         result[i] = dot(mat[i], vec);
     }
     return result;
