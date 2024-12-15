@@ -50,7 +50,7 @@ real1d<3> mat_mul_vec(const real2d<3, 3> &mat, const real1d<3> &vec) {
     return result;
 }
 
-bool string_conatins(const std::string &s, const char letter) {
+bool string_contains(const std::string &s, const char letter) {
     return s.find(letter) != std::string::npos;
 }
 
@@ -311,11 +311,11 @@ compute_neighbour_list(
     // npy_double *distvec = NULL, *absdist = NULL;
 
     // we are unpacking the quantities to be calculated
-    const bool do_first = string_conatins(quantities, 'i');
-    const bool do_secnd = string_conatins(quantities, 'j');
-    const bool do_distvec = string_conatins(quantities, 'D');
-    const bool do_absdist = string_conatins(quantities, 'd');
-    const bool do_shift = string_conatins(quantities, 'S');
+    const bool do_first = string_contains(quantities, 'i');
+    const bool do_secnd = string_contains(quantities, 'j');
+    const bool do_distvec = string_contains(quantities, 'D');
+    const bool do_absdist = string_contains(quantities, 'd');
+    const bool do_shift = string_contains(quantities, 'S');
     if (quantities.length() > do_first + do_secnd + do_distvec + do_absdist + do_shift) {
         fail("Unsupported quantity specified.");
     }

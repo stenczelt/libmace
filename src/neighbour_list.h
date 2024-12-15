@@ -56,7 +56,7 @@ double dot(real1d<len> a, real1d<len> b);
 
 real1d<3> mat_mul_vec(const real2d<3, 3> &mat, const real1d<3> &vec);
 
-bool string_conatins(const std::string &s, char letter);
+bool string_contains(const std::string &s, char letter);
 
 
 #endif //NEIGHBOURS_H
