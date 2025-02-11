@@ -47,7 +47,7 @@ jobs:
         id: cuda-toolkit
         if: ${{ matrix.device == 'cuda' }}
         with:
-          cuda: '12.1.0'
+          cuda: '12.8.0'
           method: 'network'
 
       - name: Download libtorch
