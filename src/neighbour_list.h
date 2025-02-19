@@ -1,0 +1,69 @@
+//
+// Created by Tamas K Stenczel on 29/06/2024.
+//
+// Based on the Python/C neighbour list at [1] adapted to C++ and without the Python/Numpy types.
+//
+// References:
+// [1] https://github.com/libAtoms/matscipy-neighbours
+//
+
+
+#ifndef NEIGHBOURS_H
+#define NEIGHBOURS_H
+
+#include <vector>
+#include "arrays.h"
+
+struct MaceNeighbourList {
+    std::vector<int1d<2> > edge_index;
+    std::vector<int1d<3> > unit_shifts;
+    real2d<3, 3> extended_cell;
+};
+
+MaceNeighbourList
+calc_mace_neighbour_list(
+    const real2d<3, 3> &cell,
+    const bool1d<3> &pbc,
+    const std::vector<std::array<double, 3> > &positions,
+    const double &cutoff
+);
+
+
+struct neighbour_list {
+    std::vector<int> first; // i - [nNeigh,]
+    std::vector<int> secnd; // j - [nNeigh,]
+    std::vector<real1d<3> > distvec; // D  - [nNeigh, 3]
+    std::vector<double> absdist; // d  - [nNeigh,]
+    std::vector<int1d<3> > shift; // S  - [nNeigh, 3]
+};
+
+
+neighbour_list compute_neighbour_list(
+    const std::string &quantities,
+    // known size
+    const real1d<3> &cell_origin,
+    const real2d<3, 3> &cell,
+    const bool1d<3> &pbc,
+    // variable size
+    const std::vector<std::array<double, 3> > &positions,
+    const std::vector<double> &cutoffs,
+    const std::vector<int> &types
+);
+
+// internal functions, added now so we can test them
+real1d<3> cross_product(const real1d<3> &a, const real1d<3> &b);
+
+double normsq(const real1d<3> &a);
+
+template<std::size_t len>
+double dot(real1d<len> a, real1d<len> b);
+
+template<std::size_t n, std::size_t m>
+real1d<n> mat_mul_vec(const real2d<n, m> &mat, const real1d<m> &vec);
+
+bool string_contains(const std::string &s, char letter);
+
+real2d<3, 3>
+inverse_transpose_3x3(const real2d<3, 3> &matrix);
+
+#endif //NEIGHBOURS_H

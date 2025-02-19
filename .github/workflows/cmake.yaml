@@ -1,0 +1,125 @@
+name: CMake build
+
+on:
+  push:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    # non-parametrized settings
+    env:
+      build_type: Release
+
+    # Matrix of configurations
+    strategy:
+      # let all platforms run, regardless of failures
+      fail-fast: false
+
+      matrix:
+        os: [ ubuntu-latest ] # ubuntu-24.04
+        c_compiler: [ gcc ]  # [ gcc, clang ]
+        device: [ cpu, cuda ]
+        include:
+          - os: ubuntu-latest
+            c_compiler: gcc
+            cpp_compiler: g++
+            ftn_compiler: gfortran
+          - os: ubuntu-latest
+            c_compiler: clang
+            cpp_compiler: clang++
+            ftn_compiler: gfortran
+            device: cpu
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup MPI
+        uses: mpi4py/setup-mpi@v1
+        with:
+          mpi: 'openmpi'
+
+      - name: Set reusable strings
+        id: strings
+        shell: bash
+        run: |
+          echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+
+      - name: Install CUDA toolkit
+        uses: Jimver/cuda-toolkit@master
+        id: cuda-toolkit
+        if: ${{ matrix.device == 'cuda' }}
+        with:
+          cuda: '12.8.0'
+          method: 'network'
+
+      - name: Download libtorch
+        id: libtorch
+        shell: bash
+        run: |
+          case ${{ matrix.device }} in
+            "cpu")
+              LIBTORCH_URL="https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.1.0%2Bcpu.zip"
+              ;;
+            "cuda")
+              LIBTORCH_URL="https://download.pytorch.org/libtorch/cu121/libtorch-cxx11-abi-shared-with-deps-2.1.0%2Bcu121.zip"
+              echo "cmake_flags=-DUSE_CUDA=ON" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+            echo -n "unknown option for device"
+            exit 1
+            ;;
+          esac  
+
+          # download & extract libtorch
+          wget -q $LIBTORCH_URL -O libtorch.zip
+          unzip -q libtorch.zip
+          rm libtorch.zip
+          
+          # save path for later steps
+          echo "path=$(realpath libtorch)" >> "$GITHUB_OUTPUT"
+      - name: Configure CMake
+        run: >
+          cmake -B ${{ steps.strings.outputs.build-output-dir }}
+          -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+          -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+          -DCMAKE_FORTRAN_COMPILER=${{ matrix.ftn_compiler }}
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DCMAKE_PREFIX_PATH=${{ steps.libtorch.outputs.path }}
+          ${{ steps.libtorch.outputs.cmake_flags }}
+          -S ${{ github.workspace }}
+
+      - name: Build
+        run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ env.build_type }}
+
+      - name: Test
+        working-directory: ${{ steps.strings.outputs.build-output-dir }}
+        run: ctest --build-config ${{ env.build_type }}
+
+      # ------------------------------------------------------------------------
+      # Examples: check that all are compiled correctly
+      # ------------------------------------------------------------------------
+
+      # Download the MACE-MP0b3 model to test on: need to download & convert using the
+      # mace-torch Python package. This takes ca. 2 minutes on the GitHub runners, so we
+      # will cache the result.
+      - id: cache-test-model
+        uses: actions/cache@v4
+        with:
+          path: mace.model-lammps.pt
+          key: model-mp-0b3
+      - name: Download a model for examples
+        if: steps.cache-test-model.outputs.cache-hit != 'true'
+        run: |
+          python -m pip install mace-torch
+          wget -O mace.model https://github.com/ACEsuit/mace-mp/releases/download/mace_mp_0b3/mace-mp-0b3-medium.model
+          mace_create_lammps_model mace.model
+
+      # run each example
+      - name: Run C++ example
+        run: ${{ steps.strings.outputs.build-output-dir }}/examples/mace_c++ mace.model-lammps.pt
+
+      - name: Run F90 example
+        run: ${{ steps.strings.outputs.build-output-dir }}/examples/mace_f90 mace.model-lammps.pt
