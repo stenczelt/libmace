@@ -50,7 +50,7 @@ set(MACE_SOURCE_DIR ${CMAKE_SOURCE_DIR}/src)
 set(SOURCES src/neighbour_list.cpp src/mace.cpp src/mace_c_api.cpp)
 
 # mace library: underlying C++ code
-add_library(mace STATIC ${SOURCES})
+add_library(mace SHARED ${SOURCES})
 target_include_directories(mace PUBLIC
         # for compatibility with install setup
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -92,26 +92,17 @@ endif ()
 add_subdirectory(examples)
 
 # -----------------------------------------------------------------------------
-# Installation & other settings
+# Installation & Packaging (w/ cmake)
 # -----------------------------------------------------------------------------
 
-# ... CMAKE
-include(CMakePackageConfigHelpers)
-write_basic_package_version_file(
-        "${CMAKE_CURRENT_BINARY_DIR}/maceConfigVersion.cmake"
-        VERSION ${libmace_VERSION}
-        COMPATIBILITY AnyNewerVersion
-)
-
-# Specify installation rules
-
-# targets: libraries & executables
+# install: libraries & executables
 install(TARGETS mace
         EXPORT maceTargets
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
         RUNTIME DESTINATION bin
 )
+# install: headers & F90 interfaces
 install(FILES
         include/mace.h
         src/fortran/mace.f90
@@ -119,7 +110,16 @@ install(FILES
         DESTINATION include
 )
 
-# CMake package: namespace & contents
+# CMake package:
+#   - write a version file for the CMake
+#   - namespace & contents
+#   - copy all into {install_dir}/cmake
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+        "${CMAKE_CURRENT_BINARY_DIR}/maceConfigVersion.cmake"
+        VERSION ${libmace_VERSION}
+        COMPATIBILITY AnyNewerVersion
+)
 install(EXPORT maceTargets
         FILE maceTargets.cmake
         NAMESPACE MACE::
