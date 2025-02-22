@@ -103,8 +103,12 @@ install(TARGETS mace
         LIBRARY DESTINATION lib
         RUNTIME DESTINATION bin
 )
-install(FILES src/fortran/mace.f90 src/fortran/mace.stub.f90
-        DESTINATION include)
+install(FILES
+        include/mace.h
+        src/fortran/mace.f90
+        src/fortran/mace.stub.f90
+        DESTINATION include
+)
 
 # CMake package: namespace & contents
 install(EXPORT maceTargets
