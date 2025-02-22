@@ -18,6 +18,7 @@ include("${CURRENT_DIR}/maceTargets.cmake")
 
 # Set the library path variable
 set(MACE_LIBRARIES MACE::mace)
+set(MACE_LIBRARIES ${MACE_LIBRARIES} ${TORCH_LIBRARIES})
 
 # Ensure C/C++ standard library is linked
 if(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")

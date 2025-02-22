@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
-project(mace VERSION 1.0)
+project(mace)
+set(libmace_VERSION 2025.02.22)
 
 # -----------------------------------------------------------------------------
 # CMake options - build arguments
@@ -49,7 +50,7 @@ set(MACE_SOURCE_DIR ${CMAKE_SOURCE_DIR}/src)
 set(SOURCES src/neighbour_list.cpp src/mace.cpp src/mace_c_api.cpp)
 
 # mace library: underlying C++ code
-add_library(mace STATIC ${SOURCES})
+add_library(mace SHARED ${SOURCES})
 target_include_directories(mace PUBLIC
         # for compatibility with install setup
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -57,7 +58,7 @@ target_include_directories(mace PUBLIC
 )
 # public headers
 target_include_directories(mace PRIVATE ${MACE_SOURCE_DIR}) # private headers & implementation
-target_link_libraries(mace PUBLIC "${TORCH_LIBRARIES}") # torch
+target_link_libraries(mace PRIVATE "${TORCH_LIBRARIES}") # torch
 
 # MACE Fortran module: interface only, needs MPI
 add_library(mace_fortran INTERFACE)
@@ -91,27 +92,41 @@ endif ()
 add_subdirectory(examples)
 
 # -----------------------------------------------------------------------------
-# Installation & other settings
+# Installation & Packaging (w/ cmake)
 # -----------------------------------------------------------------------------
 
-# Specify installation rules
-
-# targets: libraries & executables
+# install: libraries & executables
 install(TARGETS mace
         EXPORT maceTargets
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
         RUNTIME DESTINATION bin
 )
-install(FILES src/fortran/mace.f90 src/fortran/mace.stub.f90
-        DESTINATION include)
+# install: headers & F90 interfaces
+install(FILES
+        include/mace.h
+        src/fortran/mace.f90
+        src/fortran/mace.stub.f90
+        DESTINATION include
+)
 
-# CMake package: namespace & contents
+# CMake package:
+#   - write a version file for the CMake
+#   - namespace & contents
+#   - copy all into {install_dir}/cmake
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+        "${CMAKE_CURRENT_BINARY_DIR}/maceConfigVersion.cmake"
+        VERSION ${libmace_VERSION}
+        COMPATIBILITY AnyNewerVersion
+)
 install(EXPORT maceTargets
         FILE maceTargets.cmake
         NAMESPACE MACE::
         DESTINATION cmake
 )
-install(FILES cmake/maceConfig.cmake cmake/maceConfigVersion.cmake
+install(FILES
+        cmake/maceConfig.cmake
+        "${CMAKE_CURRENT_BINARY_DIR}/maceConfigVersion.cmake"
         DESTINATION cmake)
 
