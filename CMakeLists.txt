@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
-project(mace VERSION 1.0)
+project(mace)
+set(libmace_VERSION 2025.02.22)
 
 # -----------------------------------------------------------------------------
 # CMake options - build arguments
@@ -94,6 +95,14 @@ add_subdirectory(examples)
 # Installation & other settings
 # -----------------------------------------------------------------------------
 
+# ... CMAKE
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+        "${CMAKE_CURRENT_BINARY_DIR}/maceConfigVersion.cmake"
+        VERSION ${libmace_VERSION}
+        COMPATIBILITY AnyNewerVersion
+)
+
 # Specify installation rules
 
 # targets: libraries & executables
@@ -116,6 +125,8 @@ install(EXPORT maceTargets
         NAMESPACE MACE::
         DESTINATION cmake
 )
-install(FILES cmake/maceConfig.cmake cmake/maceConfigVersion.cmake
+install(FILES
+        cmake/maceConfig.cmake
+        "${CMAKE_CURRENT_BINARY_DIR}/maceConfigVersion.cmake"
         DESTINATION cmake)
 
