@@ -2,7 +2,9 @@ name: Build Libtorch Shared Library
 
 on:
   push:
-    branches: "*"
+    branches:
+      - main
+      - packaging # temporarily
     tags:
       - "v*.*.*"
 
