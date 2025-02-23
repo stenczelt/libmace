@@ -98,6 +98,11 @@ jobs:
           FILENAME="libmace-${PLATFORM}-${VERSION}-libtorch${{ matrix.libtorch_version }}${MODIFIER}.tar.gz"
           echo "TAR_FILENAME=$FILENAME" >> $GITHUB_ENV
           echo "Generated filename: $FILENAME"
+          
+      - name: Setup MPI
+        uses: mpi4py/setup-mpi@v1
+        with:
+          mpi: 'openmpi'
 
       - name: Download libtorch
         id: libtorch
