@@ -133,7 +133,7 @@ jobs:
           cmake -B ${{ env.build_dir }}
           -DCMAKE_CXX_COMPILER=${{ env.cpp_compiler }}
           -DCMAKE_C_COMPILER=${{ env.c_compiler }}
-          -DCMAKE_FORTRAN_COMPILER=${{ env.ftn_compiler }}
+          -DCMAKE_Fortran_COMPILER=${{ env.ftn_compiler }}
           -DCMAKE_BUILD_TYPE=${{ env.build_type }}
           -DCMAKE_PREFIX_PATH=${{ steps.libtorch.outputs.path }}
           -S ${{ github.workspace }}
