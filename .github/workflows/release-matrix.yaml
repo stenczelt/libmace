@@ -126,7 +126,7 @@ jobs:
         uses: Jimver/cuda-toolkit@master
         if: ${{ matrix.libtorch_cuda != 'cpu' }}
         with:
-          cuda: ${{ matrix.libtorch_version}}
+          cuda: ${{ matrix.cuda_version}}
           method: 'network'
 
       - name: Configure CMake
