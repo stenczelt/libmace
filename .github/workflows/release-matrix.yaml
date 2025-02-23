@@ -17,41 +17,41 @@ jobs:
       build_type: Release
       build_dir: build
       install_dir: install
-      c_compiler: gcc
-      cpp_compiler: g++
-      ftn_compiler: gfortran
+      c_compiler: gcc-13
+      cpp_compiler: g++-13
+      ftn_compiler: gfortran-13
 
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-22.04, macos-14 ]
+        os: [ ubuntu-24.04, macos-14 ]
         libtorch_cuda: [ cpu ] # Default for macOS
         libtorch_version: [ "2.6.0", "2.4.1" ]
         include:
           # Libtorch 2.6.0
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             libtorch_cuda: cu118
             cuda_version: "11.8.0"
             libtorch_version: "2.6.0"
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             libtorch_cuda: cu124
             cuda_version: "12.4.0"
             libtorch_version: "2.6.0"
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             libtorch_cuda: cu126
             cuda_version: "12.6.0"
             libtorch_version: "2.6.0"
 
           # Libtorch 2.4.1
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             libtorch_cuda: cu118
             cuda_version: "11.8.0"
             libtorch_version: "2.4.1"
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             libtorch_cuda: cu121
             cuda_version: "12.1.0"
             libtorch_version: "2.4.1"
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             libtorch_cuda: cu124
             cuda_version: "12.4.0"
             libtorch_version: "2.4.1"
@@ -63,6 +63,7 @@ jobs:
           - os: macos-14
             libtorch_cuda: cpu
             libtorch_version: "2.4.1"
+            env:
 
     #        exclude:
     #          - os: macos-14
