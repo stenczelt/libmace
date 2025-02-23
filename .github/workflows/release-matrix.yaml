@@ -115,7 +115,7 @@ jobs:
           -S ${{ github.workspace }}
 
       - name: Build
-        run: cmake --build ${{ env.build_dir }} --config ${{ env.build_type }}
+        run: cmake --build ${{ env.build_dir }} --config ${{ env.build_type }} -j $(nproc)
 
       - name: Install
         run: cmake --install ${{ env.build_dir }} --prefix ${{ env.install_dir }} --strip
@@ -188,7 +188,7 @@ jobs:
           -S ${{ github.workspace }}
 
       - name: Build
-        run: cmake --build ${{ env.build_dir }} --config ${{ env.build_type }}
+        run: cmake --build ${{ env.build_dir }} --config ${{ env.build_type }} -j $(nproc)
 
       - name: Install
         run: cmake --install ${{ env.build_dir }} --prefix ${{ env.install_dir }} --strip
