@@ -60,10 +60,11 @@ jobs:
           - os: macos-14
             libtorch_cuda: cpu
             libtorch_version: "2.6.0"
+            env: c_compiler=clang cpp_compiler=clang++
           - os: macos-14
             libtorch_cuda: cpu
             libtorch_version: "2.4.1"
-            env:
+            env: c_compiler=clang cpp_compiler=clang++
 
     #        exclude:
     #          - os: macos-14
