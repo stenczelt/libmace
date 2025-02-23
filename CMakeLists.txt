@@ -58,7 +58,7 @@ target_include_directories(mace PUBLIC
 )
 # public headers
 target_include_directories(mace PRIVATE ${MACE_SOURCE_DIR}) # private headers & implementation
-target_link_libraries(mace PUBLIC "${TORCH_LIBRARIES}") # torch
+target_link_libraries(mace PRIVATE "${TORCH_LIBRARIES}") # torch
 
 # MACE Fortran module: interface only, needs MPI
 add_library(mace_fortran INTERFACE)
