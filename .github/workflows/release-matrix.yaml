@@ -99,7 +99,7 @@ jobs:
           FILENAME="libmace-${PLATFORM}-${VERSION}-libtorch${{ matrix.libtorch_version }}${MODIFIER}.tar.gz"
           echo "TAR_FILENAME=$FILENAME" >> $GITHUB_ENV
           echo "Generated filename: $FILENAME"
-          
+
       - name: Setup MPI
         uses: mpi4py/setup-mpi@v1
         with:
@@ -120,6 +120,13 @@ jobs:
           
           # save path for later steps
           echo "path=$(realpath libtorch)" >> "$GITHUB_OUTPUT"
+
+      - name: Install CUDA toolkit
+        uses: Jimver/cuda-toolkit@master
+        if: ${{ matrix.libtorch_cuda != 'cpu' }}
+        with:
+          cuda: ${{ matrix.libtorch_version}}
+          method: 'network'
 
       - name: Configure CMake
         run: >
