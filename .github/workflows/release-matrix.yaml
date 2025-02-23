@@ -8,24 +8,25 @@ on:
     tags:
       - "v*.*.*"
 
+# global non-parametrized settings
+env:
+  build_type: Release
+  build_dir: build
+  install_dir: install
+
 jobs:
-  build:
+  build-ubuntu:
     runs-on: ${{ matrix.os }}
 
-    # non-parametrized settings
     env:
-      build_type: Release
-      build_dir: build
-      install_dir: install
-      c_compiler: gcc-13
-      cpp_compiler: g++-13
-      ftn_compiler: gfortran-13
+      c_compiler: gcc
+      cpp_compiler: g++
+      ftn_compiler: gfortran
 
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-24.04, macos-14 ]
-        libtorch_cuda: [ cpu ] # Default for macOS
+        libtorch_cuda: [ cpu ]
         libtorch_version: [ "2.6.0", "2.4.1" ]
         include:
           # Libtorch 2.6.0
@@ -56,32 +57,13 @@ jobs:
             cuda_version: "12.4.0"
             libtorch_version: "2.4.1"
 
-#          # MacOS arm64 (only CPU) .. TODO separate this out
-#          - os: macos-14
-#            libtorch_cuda: cpu
-#            libtorch_version: "2.6.0"
-#            env: c_compiler=clang cpp_compiler=clang++
-#          - os: macos-14
-#            libtorch_cuda: cpu
-#            libtorch_version: "2.4.1"
-#            env: c_compiler=clang cpp_compiler=clang++
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up build environment
-        run: |
-          echo "LIBTORCH_VERSION=${{ matrix.libtorch_version }}" >> $GITHUB_ENV
-
       - name: Construct filename
         run: |
-          # platofrm
-          if [[ "${{ matrix.os }}" == macos* ]]; then
-            PLATFORM="macos-arm64"
-          else
-            PLATFORM="x86_64"
-          fi
+          PLATFORM="x86_64"
           
           # modifier: for the end of the filename, note includes `-` at the start
           if [[ "${{ matrix.libtorch_cuda }}" == "cpu" ]]; then
@@ -105,16 +87,12 @@ jobs:
       - name: Download libtorch
         id: libtorch
         run: |
-          if [[ "${{ matrix.os }}" == ubuntu* ]]; then
-            LIBTORCH_URL="https://download.pytorch.org/libtorch/${{ matrix.libtorch_cuda }}/libtorch-cxx11-abi-shared-with-deps-${{ matrix.libtorch_version }}%2B${{ matrix.libtorch_cuda }}.zip"
-          elif [[ "${{ matrix.os }}" == macos* ]]; then
-            LIBTORCH_URL="https://download.pytorch.org/libtorch/cpu/libtorch-macos-arm64-${{ matrix.libtorch_version }}.zip"
-          fi
+          LIBTORCH_URL="https://download.pytorch.org/libtorch/${{ matrix.libtorch_cuda }}/libtorch-cxx11-abi-shared-with-deps-${{ matrix.libtorch_version }}%2B${{ matrix.libtorch_cuda }}.zip"
 
           echo "Downloading libtorch from $LIBTORCH_URL"
           wget -O libtorch.zip "$LIBTORCH_URL"
           unzip libtorch.zip
-          
+
           # save path for later steps
           echo "path=$(realpath libtorch)" >> "$GITHUB_OUTPUT"
 
@@ -145,18 +123,94 @@ jobs:
         working-directory: ${{ env.install_dir }}
         run: cmake -E tar cvzf ../${{ env.TAR_FILENAME }} .
 
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          path: ./${{ env.TAR_FILENAME }}
+          name: ${{ env.TAR_FILENAME }}
+
+  build-macos:
+    runs-on: macos-14
+
+    # non-parametrized settings
+    env:
+      c_compiler: clang
+      cpp_compiler: clang++
+      ftn_compiler: gfortran-13
+
+    strategy:
+      fail-fast: false
+      matrix:
+        libtorch_version: [ "2.6.0", "2.4.1" ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Construct filename
+        run: |
+          PLATFORM="macos-arm64"
+          MODIFIER=""
+          
+          # version: this should come from the package
+          VERSION=25.2.1
+          
+          FILENAME="libmace-${PLATFORM}-${VERSION}-libtorch${{ matrix.libtorch_version }}${MODIFIER}.tar.gz"
+          echo "TAR_FILENAME=$FILENAME" >> $GITHUB_ENV
+          echo "Generated filename: $FILENAME"
+
+      - name: Setup MPI
+        uses: mpi4py/setup-mpi@v1
+        with:
+          mpi: 'openmpi'
+
+      - name: Download libtorch
+        id: libtorch
+        run: |
+          LIBTORCH_URL="https://download.pytorch.org/libtorch/cpu/libtorch-macos-arm64-${{ matrix.libtorch_version }}.zip"
+
+          echo "Downloading libtorch from $LIBTORCH_URL"
+          wget -O libtorch.zip "$LIBTORCH_URL"
+          unzip libtorch.zip
+          
+          # save path for later steps
+          echo "path=$(realpath libtorch)" >> "$GITHUB_OUTPUT"
+
+      - name: Configure CMake
+        run: >
+          cmake -B ${{ env.build_dir }}
+          -DCMAKE_CXX_COMPILER=${{ env.cpp_compiler }}
+          -DCMAKE_C_COMPILER=${{ env.c_compiler }}
+          -DCMAKE_Fortran_COMPILER=${{ env.ftn_compiler }}
+          -DCMAKE_BUILD_TYPE=${{ env.build_type }}
+          -DCMAKE_PREFIX_PATH=${{ steps.libtorch.outputs.path }}
+          -S ${{ github.workspace }}
+
+      - name: Build
+        run: cmake --build ${{ env.build_dir }} --config ${{ env.build_type }}
+
+      - name: Install
+        run: cmake --install ${{ env.build_dir }} --prefix ${{ env.install_dir }} --strip
+
+      - name: Pack
+        working-directory: ${{ env.install_dir }}
+        run: cmake -E tar cvzf ../${{ env.TAR_FILENAME }} .
+
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           path: ./${{ env.TAR_FILENAME }}
           name: ${{ env.TAR_FILENAME }}
+
   release:
     if: contains(github.ref, 'tags/v')
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    needs: build
+    needs:
+      - build-ubuntu
+      - build-macos
 
     steps:
       - name: Download artifacts
