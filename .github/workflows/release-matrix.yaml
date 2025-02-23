@@ -29,11 +29,11 @@ jobs:
         libtorch_version: [ "2.6.0", "2.4.1" ]
         include:
           # Libtorch 2.6.0
-          - os: ubuntu-24.04
+          - os: ubuntu-22.04
             libtorch_cuda: cu118
             cuda_version: "11.8.0"
             libtorch_version: "2.6.0"
-          - os: ubuntu-24.04
+          - os: ubuntu-22.04
             libtorch_cuda: cu124
             cuda_version: "12.4.0"
             libtorch_version: "2.6.0"
@@ -43,32 +43,28 @@ jobs:
             libtorch_version: "2.6.0"
 
           # Libtorch 2.4.1
-          - os: ubuntu-24.04
+          - os: ubuntu-22.04
             libtorch_cuda: cu118
             cuda_version: "11.8.0"
             libtorch_version: "2.4.1"
-          - os: ubuntu-24.04
+          - os: ubuntu-22.04
             libtorch_cuda: cu121
             cuda_version: "12.1.0"
             libtorch_version: "2.4.1"
-          - os: ubuntu-24.04
+          - os: ubuntu-22.04
             libtorch_cuda: cu124
             cuda_version: "12.4.0"
             libtorch_version: "2.4.1"
 
-          # MacOS arm64 (only CPU)
-          - os: macos-14
-            libtorch_cuda: cpu
-            libtorch_version: "2.6.0"
-            env: c_compiler=clang cpp_compiler=clang++
-          - os: macos-14
-            libtorch_cuda: cpu
-            libtorch_version: "2.4.1"
-            env: c_compiler=clang cpp_compiler=clang++
-
-    #        exclude:
-    #          - os: macos-14
-    #            arch: x86_64 # No MacOS x86_64 builds
+#          # MacOS arm64 (only CPU) .. TODO separate this out
+#          - os: macos-14
+#            libtorch_cuda: cpu
+#            libtorch_version: "2.6.0"
+#            env: c_compiler=clang cpp_compiler=clang++
+#          - os: macos-14
+#            libtorch_cuda: cpu
+#            libtorch_version: "2.4.1"
+#            env: c_compiler=clang cpp_compiler=clang++
 
     steps:
       - name: Checkout repository
