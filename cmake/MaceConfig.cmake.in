@@ -1,0 +1,5 @@
+@PACKAGE_INIT@
+include("${CMAKE_CURRENT_LIST_DIR}/MaceTargets.cmake")
+check_required_components(mace)
+
+message(STATUS "Loading MACE as fetched content")
