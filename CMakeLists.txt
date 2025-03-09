@@ -6,7 +6,8 @@ set(libmace_VERSION 2025.02.22)
 # CMake options - build arguments
 # -----------------------------------------------------------------------------
 option(USE_CUDA "Compile with CUDA support" OFF)
-option(WITH_TESTS "Compile test suite" ON)
+option(WITH_TESTS "Compile test suite" OFF)
+option(WITH_EXAMPLES "Compile example programs" OFF)
 
 # -----------------------------------------------------------------------------
 # Languages
@@ -89,7 +90,9 @@ if (WITH_TESTS)
 endif ()
 
 # examples
-add_subdirectory(examples)
+if (WITH_EXAMPLES)
+    add_subdirectory(examples)
+endif ()
 
 # -----------------------------------------------------------------------------
 # Installation & Packaging (w/ cmake)
