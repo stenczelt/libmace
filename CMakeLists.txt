@@ -130,3 +130,11 @@ install(FILES
         "${CMAKE_CURRENT_BINARY_DIR}/maceConfigVersion.cmake"
         DESTINATION cmake)
 
+# Generate Config.cmake file
+include(CMakePackageConfigHelpers)
+configure_package_config_file(
+        cmake/maceConfig.cmake.in
+        ${CMAKE_CURRENT_BINARY_DIR}/maceConfig.cmake
+        INSTALL_DESTINATION lib/cmake/mace
+)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/maceConfig.cmake DESTINATION lib/cmake/mace)
