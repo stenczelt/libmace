@@ -50,7 +50,7 @@ set(MACE_SOURCE_DIR ${CMAKE_SOURCE_DIR}/src)
 set(SOURCES src/neighbour_list.cpp src/mace.cpp src/mace_c_api.cpp)
 
 # mace library: underlying C++ code
-add_library(mace SHARED ${SOURCES})
+add_library(mace STATIC ${SOURCES})
 target_include_directories(mace PUBLIC
         # for compatibility with install setup
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
