@@ -5,7 +5,7 @@ on:
     branches:
       - main
       - pre-release
-      - packaging # temporarily
+      - build-mpich # temporarily
     tags:
       - "v*.*.*"
 
@@ -15,7 +15,7 @@ env:
   build_dir: build
   install_dir: install
   # version: this should come from the package
-  libmace_VERSION: "25.03.1"
+  libmace_VERSION: "25.03.2"
 
 jobs:
   build-ubuntu:
@@ -32,6 +32,7 @@ jobs:
         os: [ ubuntu-24.04 ]
         libtorch_cuda: [ cpu ]
         libtorch_version: [ "2.6.0", "2.4.1" ]
+        mpi_vendor: [ "openmpi", "mpich" ]
         include:
           # Libtorch 2.6.0
           - os: ubuntu-22.04
@@ -71,9 +72,9 @@ jobs:
           
           # modifier: for the end of the filename, note includes `-` at the start
           if [[ "${{ matrix.libtorch_cuda }}" == "cpu" ]]; then
-            MODIFIER=""
+            MODIFIER="-${{ matrix.mpi_vendor }}"
           else
-            MODIFIER="-${{ matrix.libtorch_cuda }}"
+            MODIFIER="-${{ matrix.libtorch_cuda }}-${{ matrix.mpi_vendor }}"
           fi
           
           FILENAME="libmace-${PLATFORM}-${{ env.libmace_VERSION }}-libtorch${{ matrix.libtorch_version }}${MODIFIER}.tar.gz"
@@ -83,7 +84,7 @@ jobs:
       - name: Setup MPI
         uses: mpi4py/setup-mpi@v1
         with:
-          mpi: 'openmpi'
+          mpi: ${{ matrix.mpi_vendor }}
 
       - name: Download libtorch
         id: libtorch
