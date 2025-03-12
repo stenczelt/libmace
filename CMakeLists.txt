@@ -141,3 +141,9 @@ configure_package_config_file(
         INSTALL_DESTINATION lib/cmake/mace
 )
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/maceConfig.cmake DESTINATION lib/cmake/mace)
+
+
+# magic
+add_library(MACE::mace ALIAS mace)
+add_library(MACE::mace_fortran ALIAS mace_fortran)
+set(MACE_FORTRAN_MODULE "${CMAKE_CURRENT_SOURCE_DIR}/src/fortran/mace.f90" CACHE STRING "MACE F90 wrapper path to access directly.")
