@@ -147,3 +147,16 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/maceConfig.cmake DESTINATION lib/cmake
 add_library(MACE::mace ALIAS mace)
 add_library(MACE::mace_fortran ALIAS mace_fortran)
 set(MACE_FORTRAN_MODULE "${CMAKE_CURRENT_SOURCE_DIR}/src/fortran/mace.f90" CACHE STRING "MACE F90 wrapper path to access directly.")
+
+# Set the library path variable
+set(MACE_LIBRARIES_0 MACE::mace)
+set(MACE_LIBRARIES_0 ${MACE_LIBRARIES_0} ${TORCH_LIBRARIES})
+
+# Ensure C/C++ standard library is linked
+if(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
+    set(MACE_LIBRARIES_0 ${MACE_LIBRARIES_0} stdc++)
+elseif(CMAKE_C_COMPILER_ID STREQUAL "AppleClang")
+    set(MACE_LIBRARIES_0 ${MACE_LIBRARIES_0} c++)
+endif() # todo: add cases for additional compilers
+
+set(MACE_LIBRARIES "${MACE_LIBRARIES_0}" CACHE STRING "fiddly export of libraries")
