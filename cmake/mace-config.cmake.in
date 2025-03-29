@@ -1,0 +1,14 @@
+@PACKAGE_INIT@
+
+# Include dependencies finder helpers
+include("${CMAKE_CURRENT_LIST_DIR}/FindDependencies.cmake" OPTIONAL)
+
+# Find dependencies
+include(CMakeFindDependencyMacro)
+find_dependency(Torch REQUIRED)
+
+# Import targets
+include("${CMAKE_CURRENT_LIST_DIR}/mace-targets.cmake")
+
+# Define installation information validation
+check_required_components(mace)
