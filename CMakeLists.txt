@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.14)
 project(mace VERSION 1.0.0 LANGUAGES CXX Fortran)
 
+# Fortran
+enable_language(Fortran)
+set(CMAKE_Fortran_FORMAT FREE)
+set(CMAKE_Fortran_STANDARD f2003)
+
 # Options
 option(MACE_BUILD_EXAMPLES "Build mace examples" OFF)
 option(MACE_BUILD_TESTS "Build mace tests" OFF)
@@ -71,15 +76,20 @@ target_link_libraries(mace
 
 # Fortran interface library
 if (MACE_BUILD_FORTRAN)
-    add_library(mace_fortran ${FORTRAN_SOURCE_FILES})
+    # MPI
+    find_package(MPI REQUIRED)
+
+    # MACE Fortran module: interface only, needs MPI
+    add_library(mace_fortran INTERFACE)
     add_library(mace::fortran ALIAS mace_fortran)
-
-    # Link to the main C++ library
-    target_link_libraries(mace_fortran PRIVATE mace)
-
-    # Set module output directory
-    set_target_properties(mace_fortran PROPERTIES
-            Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/modules"
+    target_sources(mace_fortran INTERFACE src/fortran/mace.f90)
+    target_include_directories(mace_fortran INTERFACE
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/fortran
+            ${MPI_Fortran_INCLUDE_DIRS}
+    )
+    target_link_libraries(mace_fortran INTERFACE
+            mace
+            ${MPI_Fortran_LIBRARIES}
     )
 endif ()
 
@@ -104,11 +114,11 @@ if (MACE_BUILD_FORTRAN)
             ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     )
 
-    # Install Fortran module files
-    install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/modules/"
-            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/mace/fortran
-            FILES_MATCHING PATTERN "*.mod"
-    )
+    #    # Install Fortran module files
+    #    install(DIRECTORY "${MACE_FORTRAN_MODULE_DIR}/"
+    #            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/mace/fortran
+    #            FILES_MATCHING PATTERN "*.mod"
+    #    )
 endif ()
 
 # Install headers
