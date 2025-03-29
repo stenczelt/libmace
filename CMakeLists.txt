@@ -108,11 +108,12 @@ install(TARGETS mace
 
 # Install Fortran library and modules if built
 if (MACE_BUILD_FORTRAN)
-    install(TARGETS mace_fortran
-            EXPORT mace-targets
-            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    )
+    #    install(TARGETS mace_fortran
+    #            EXPORT mace-targets
+    #            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    #            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    #    )
+    set(MACE_FORTRAN_MODULE "${CMAKE_CURRENT_SOURCE_DIR}/src/fortran/mace.f90" CACHE STRING "MACE F90 wrapper path to access directly.")
 
     #    # Install Fortran module files
     #    install(DIRECTORY "${MACE_FORTRAN_MODULE_DIR}/"
@@ -124,6 +125,13 @@ endif ()
 # Install headers
 install(DIRECTORY include/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+# Install F90 interface source
+install(FILES
+        src/fortran/mace.f90
+        src/fortran/mace.stub.f90
+        DESTINATION include
 )
 
 # Export targets
