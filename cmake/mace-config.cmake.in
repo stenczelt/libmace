@@ -1,10 +1,12 @@
 @PACKAGE_INIT@
 
-# Include dependencies finder helpers
-include("${CMAKE_CURRENT_LIST_DIR}/FindDependencies.cmake" OPTIONAL)
-
 # Find dependencies
 include(CMakeFindDependencyMacro)
+
+# Find libtorch with the same version preference that was used to build mace
+set(MACE_USE_SYSTEM_TORCH @MACE_USE_SYSTEM_TORCH@)
+set(MACE_TORCH_VERSION "@MACE_TORCH_VERSION@")
+
 find_dependency(Torch REQUIRED)
 
 # Import targets

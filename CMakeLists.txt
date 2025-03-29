@@ -4,6 +4,8 @@ project(mace VERSION 1.0.0 LANGUAGES CXX)
 # Options
 option(MACE_BUILD_EXAMPLES "Build mace examples" OFF)
 option(MACE_BUILD_TESTS "Build mace tests" OFF)
+option(MACE_USE_SYSTEM_TORCH "Use system-installed libtorch" ON)
+set(MACE_TORCH_VERSION "1.10.0" CACHE STRING "libtorch version to use if downloading")
 
 # C++ standard requirements
 set(CMAKE_CXX_STANDARD 17)
@@ -24,18 +26,24 @@ file(GLOB_RECURSE SOURCE_FILES
 
 # Handle dependencies
 include(FetchContent)
-# Avoid warning about DOWNLOAD_EXTRACT_TIMESTAMP in CMake 3.24:
-if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.24.0")
-    cmake_policy(SET CMP0135 NEW)
+
+# Try to find system libtorch first if preferred
+if (MACE_USE_SYSTEM_TORCH)
+    find_package(Torch QUIET REQUIRED)
 endif ()
 
-# Example of handling libtorch dependency
-FetchContent_Declare(
-        libtorch
-        URL https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-1.10.0%2Bcpu.zip
-        URL_HASH MD5=2141b6c06637d4b290bec57e524da1ac
-)
-FetchContent_MakeAvailable(libtorch)
+# If system libtorch not found or not preferred, fetch it
+if (NOT MACE_USE_SYSTEM_TORCH OR NOT Torch_FOUND)
+    message(STATUS "Using FetchContent to download libtorch ${MACE_TORCH_VERSION}")
+    FetchContent_Declare(
+            libtorch
+            URL https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-${MACE_TORCH_VERSION}%2Bcpu.zip
+            # URL_HASH would need to be updated based on version
+    )
+    FetchContent_MakeAvailable(libtorch)
+else ()
+    message(STATUS "Using system-installed libtorch ${Torch_VERSION}")
+endif ()
 
 # Define the library
 add_library(mace ${SOURCE_FILES} ${HEADER_FILES})
