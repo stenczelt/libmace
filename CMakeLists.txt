@@ -14,8 +14,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Make IDEs show header files
 file(GLOB_RECURSE HEADER_FILES
-        "${CMAKE_CURRENT_SOURCE_DIR}/include/mace/*.hpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/include/mace/*.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h"
 )
 
@@ -82,7 +80,7 @@ install(TARGETS mace
 )
 
 # Install headers
-install(DIRECTORY include/mace
+install(DIRECTORY include/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
