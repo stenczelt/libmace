@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 3.14)
-project(mace VERSION 1.0.0 LANGUAGES CXX)
+project(mace VERSION 1.0.0 LANGUAGES CXX Fortran)
 
 # Options
 option(MACE_BUILD_EXAMPLES "Build mace examples" OFF)
 option(MACE_BUILD_TESTS "Build mace tests" OFF)
 option(MACE_USE_SYSTEM_TORCH "Use system-installed libtorch" ON)
+option(MACE_BUILD_FORTRAN "Build Fortran interface" ON)
 set(MACE_TORCH_VERSION "1.10.0" CACHE STRING "libtorch version to use if downloading")
 
 # C++ standard requirements
@@ -23,8 +24,10 @@ file(GLOB_RECURSE SOURCE_FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/src/*.h"
 )
 
-message(STATUS HEADER_FILES ${HEADER_FILES})
-message(STATUS SOURCE_FILES ${SOURCE_FILES})
+# Fortran interface files
+file(GLOB_RECURSE FORTRAN_SOURCE_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/fortran/*.f90"
+)
 
 # Handle dependencies
 include(FetchContent)
@@ -47,7 +50,7 @@ else ()
     message(STATUS "Using system-installed libtorch ${Torch_VERSION}")
 endif ()
 
-# Define the library
+# Define the C++ library
 add_library(mace ${SOURCE_FILES} ${HEADER_FILES})
 add_library(mace::mace ALIAS mace)
 
@@ -66,11 +69,25 @@ target_link_libraries(mace
         torch
 )
 
+# Fortran interface library
+if (MACE_BUILD_FORTRAN)
+    add_library(mace_fortran ${FORTRAN_SOURCE_FILES})
+    add_library(mace::fortran ALIAS mace_fortran)
+
+    # Link to the main C++ library
+    target_link_libraries(mace_fortran PRIVATE mace)
+
+    # Set module output directory
+    set_target_properties(mace_fortran PROPERTIES
+            Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/modules"
+    )
+endif ()
+
 # Install rules
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
-# Installation paths
+# Installation paths for C++ library
 install(TARGETS mace
         EXPORT mace-targets
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -78,6 +95,21 @@ install(TARGETS mace
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
         INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
+
+# Install Fortran library and modules if built
+if (MACE_BUILD_FORTRAN)
+    install(TARGETS mace_fortran
+            EXPORT mace-targets
+            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    )
+
+    # Install Fortran module files
+    install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/modules/"
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/mace/fortran
+            FILES_MATCHING PATTERN "*.mod"
+    )
+endif ()
 
 # Install headers
 install(DIRECTORY include/

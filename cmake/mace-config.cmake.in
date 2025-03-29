@@ -9,8 +9,29 @@ set(MACE_TORCH_VERSION "@MACE_TORCH_VERSION@")
 
 find_dependency(Torch REQUIRED)
 
+# Set flag to indicate whether Fortran support was built
+set(MACE_HAS_FORTRAN @MACE_BUILD_FORTRAN@)
+
 # Import targets
 include("${CMAKE_CURRENT_LIST_DIR}/mace-targets.cmake")
 
 # Define installation information validation
 check_required_components(mace)
+
+# Optional Fortran components check
+if(MACE_HAS_FORTRAN)
+    # Check if Fortran was requested
+    foreach(comp ${mace_FIND_COMPONENTS})
+        if(comp STREQUAL "fortran")
+            set(mace_fortran_FOUND TRUE)
+        endif()
+    endforeach()
+else()
+    # If Fortran was requested but not available
+    foreach(comp ${mace_FIND_COMPONENTS})
+        if(comp STREQUAL "fortran" AND mace_FIND_REQUIRED_fortran)
+            set(mace_FOUND FALSE)
+            message(FATAL_ERROR "mace was built without Fortran support")
+        endif()
+    endforeach()
+endif()
