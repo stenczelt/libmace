@@ -11,6 +11,7 @@ find_dependency(Torch REQUIRED)
 
 # Set flag to indicate whether Fortran support was built
 set(MACE_HAS_FORTRAN @MACE_BUILD_FORTRAN@)
+set(MACE_FORTRAN_MODULE "${CMAKE_CURRENT_LIST_DIR}/../../../include/mace.f90")
 
 # Import targets
 include("${CMAKE_CURRENT_LIST_DIR}/mace-targets.cmake")
