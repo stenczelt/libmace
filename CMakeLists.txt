@@ -16,6 +16,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 file(GLOB_RECURSE HEADER_FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/include/mace/*.hpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/include/mace/*.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h"
 )
 
 # Library source files
@@ -23,6 +24,9 @@ file(GLOB_RECURSE SOURCE_FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/*.h"
 )
+
+message(STATUS HEADER_FILES ${HEADER_FILES})
+message(STATUS SOURCE_FILES ${SOURCE_FILES})
 
 # Handle dependencies
 include(FetchContent)
