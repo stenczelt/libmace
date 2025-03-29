@@ -97,6 +97,18 @@ endif ()
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
+
+# Ensure C/C++ standard library is linked (for F90 usage)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    target_link_libraries(mace INTERFACE stdc++)
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+    target_link_libraries(mace INTERFACE c++)
+else ()
+    # todo: add cases for additional compilers
+    message(FATAL_ERROR "Unhandled compiler.")
+endif ()
+
+
 # Installation paths for C++ library
 install(TARGETS mace
         EXPORT mace-targets
