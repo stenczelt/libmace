@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
-project(mace)
-set(libmace_VERSION 2025.02.22)
+project(mace
+        VERSION 25.03.2
+)
 
 # -----------------------------------------------------------------------------
 # CMake options - build arguments
@@ -46,21 +47,37 @@ find_package(MPI REQUIRED)
 # Our code
 # -----------------------------------------------------------------------------
 
+# -----------------------------
 # C++ source files
 set(MACE_SOURCE_DIR ${CMAKE_SOURCE_DIR}/src)
 set(SOURCES src/neighbour_list.cpp src/mace.cpp src/mace_c_api.cpp)
 
 # mace library: underlying C++ code
 add_library(mace STATIC ${SOURCES})
-target_include_directories(mace PUBLIC
-        # for compatibility with install setup
+target_include_directories(mace
+        # public ones with compatibility for install setup
+        PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
+        # private headers & implementation
+        PRIVATE
+        ${MACE_SOURCE_DIR}
 )
-# public headers
-target_include_directories(mace PRIVATE ${MACE_SOURCE_DIR}) # private headers & implementation
-target_link_libraries(mace PUBLIC "${TORCH_LIBRARIES}") # torch
+target_link_libraries(mace
+        PUBLIC
+        torch
+)
+# Ensure C/C++ standard library is linked (for F90 usage)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    target_link_libraries(mace INTERFACE stdc++)
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+    target_link_libraries(mace INTERFACE c++)
+else ()
+    # todo: add cases for additional compilers
+    message(FATAL_ERROR "Unhandled compiler.")
+endif ()
 
+# -----------------------------
 # MACE Fortran module: interface only, needs MPI
 add_library(mace_fortran INTERFACE)
 target_sources(mace_fortran INTERFACE src/fortran/mace.f90)
@@ -98,65 +115,62 @@ endif ()
 # Installation & Packaging (w/ cmake)
 # -----------------------------------------------------------------------------
 
+# foreplay
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
+# exports & alias targets
+add_library(mace::mace ALIAS mace)
+add_library(mace::fortran ALIAS mace_fortran)
+
+# exported & saved variables
+set(MACE_FORTRAN_MODULE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/fortran/mace.f90"
+        CACHE STRING
+        "MACE F90 wrapper path to access directly.")
+
 # install: libraries & executables
 install(TARGETS mace
-        EXPORT maceTargets
-        ARCHIVE DESTINATION lib
-        LIBRARY DESTINATION lib
-        RUNTIME DESTINATION bin
+        EXPORT mace-targets
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
-# install: headers & F90 interfaces
+
+# install: headers
+install(DIRECTORY include/
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+# install: F90 interface source
 install(FILES
-        include/mace.h
         src/fortran/mace.f90
         src/fortran/mace.stub.f90
         DESTINATION include
 )
 
-# CMake package:
-#   - write a version file for the CMake
-#   - namespace & contents
-#   - copy all into {install_dir}/cmake
-include(CMakePackageConfigHelpers)
-write_basic_package_version_file(
-        "${CMAKE_CURRENT_BINARY_DIR}/maceConfigVersion.cmake"
-        VERSION ${libmace_VERSION}
-        COMPATIBILITY AnyNewerVersion
+# -----------------------------
+# CMake package files
+install(EXPORT mace-targets
+        FILE mace-targets.cmake
+        NAMESPACE mace::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/mace
 )
-install(EXPORT maceTargets
-        FILE maceTargets.cmake
-        NAMESPACE MACE::
-        DESTINATION cmake
-)
-install(FILES
-        cmake/maceConfig.cmake
-        "${CMAKE_CURRENT_BINARY_DIR}/maceConfigVersion.cmake"
-        DESTINATION cmake)
-
-# Generate Config.cmake file
-include(CMakePackageConfigHelpers)
+# Create config file from template
 configure_package_config_file(
-        cmake/maceConfig.cmake.in
-        ${CMAKE_CURRENT_BINARY_DIR}/maceConfig.cmake
-        INSTALL_DESTINATION lib/cmake/mace
+        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/mace-config.cmake.in
+        ${CMAKE_CURRENT_BINARY_DIR}/mace-config.cmake
+        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/mace
 )
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/maceConfig.cmake DESTINATION lib/cmake/mace)
-
-
-# magic
-add_library(MACE::mace ALIAS mace)
-add_library(MACE::mace_fortran ALIAS mace_fortran)
-set(MACE_FORTRAN_MODULE "${CMAKE_CURRENT_SOURCE_DIR}/src/fortran/mace.f90" CACHE STRING "MACE F90 wrapper path to access directly.")
-
-# Set the library path variable
-set(MACE_LIBRARIES_0 MACE::mace)
-set(MACE_LIBRARIES_0 ${MACE_LIBRARIES_0} ${TORCH_LIBRARIES})
-
-# Ensure C/C++ standard library is linked
-if(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
-    set(MACE_LIBRARIES_0 ${MACE_LIBRARIES_0} stdc++)
-elseif(CMAKE_C_COMPILER_ID STREQUAL "AppleClang")
-    set(MACE_LIBRARIES_0 ${MACE_LIBRARIES_0} c++)
-endif() # todo: add cases for additional compilers
-
-set(MACE_LIBRARIES "${MACE_LIBRARIES_0}" CACHE STRING "fiddly export of libraries")
+# Create version file
+write_basic_package_version_file(
+        ${CMAKE_CURRENT_BINARY_DIR}/mace-config-version.cmake
+        VERSION ${PROJECT_VERSION}
+        COMPATIBILITY SameMajorVersion
+)
+# install: config and version files
+install(FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/mace-config.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/mace-config-version.cmake
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/mace
+)
