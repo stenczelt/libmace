@@ -7,11 +7,15 @@ project(mace
 # CMake options - build arguments
 # -----------------------------------------------------------------------------
 option(MACE_USE_CUDA "Compile with CUDA support" OFF)
+option(MACE_WITH_MPI "Compile with MPI support" ON)
 option(MACE_WITH_TESTS "Compile test suite" OFF)
 option(MACE_WITH_EXAMPLES "Compile example programs" OFF)
 
 set(MACE_TORCH_VERSION "2.6.0" CACHE STRING "libtorch version to use if downloading")
 
+if (NOT MACE_WITH_MPI)
+    message(FATAL_ERROR "non-MPI build it not supported yet!")
+endif ()
 # -----------------------------------------------------------------------------
 # Languages
 # -----------------------------------------------------------------------------
