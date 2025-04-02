@@ -89,6 +89,8 @@ jobs:
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           -DCMAKE_PREFIX_PATH=${{ steps.libtorch.outputs.path }}
           ${{ steps.libtorch.outputs.cmake_flags }}
+          -DMACE_WITH_TESTS=ON
+          -DMACE_WITH_EXAMPLES=ON
           -S ${{ github.workspace }}
 
       - name: Build

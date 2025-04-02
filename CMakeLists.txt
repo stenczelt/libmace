@@ -35,6 +35,7 @@ else ()
     message(STATUS "Not using CUDA.")
     set(MACE_TORCH_ARCH "cpu")
 endif ()
+message(STATUS "MACE_TORCH_ARCH" ${MACE_TORCH_ARCH}) # DEBUG
 
 # -----------------------------------------------------------------------------
 # Dependencies
