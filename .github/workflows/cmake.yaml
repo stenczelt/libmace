@@ -4,10 +4,10 @@ on:
   push:
   pull_request:
     branches: [ "main" ]
-
+# todo: build example projects
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-24.04
 
     # non-parametrized settings
     env:
@@ -19,19 +19,24 @@ jobs:
       fail-fast: false
 
       matrix:
-        os: [ ubuntu-latest ] # ubuntu-24.04
         c_compiler: [ gcc ]  # [ gcc, clang ]
+        supplied_libtorch: [ false ]  # [ gcc, clang ]
         device: [ cpu, cuda ]
         include:
-          - os: ubuntu-latest
-            c_compiler: gcc
+          - c_compiler: gcc
             cpp_compiler: g++
             ftn_compiler: gfortran
-          - os: ubuntu-latest
-            c_compiler: clang
+            supplied_libtorch: false
+          - c_compiler: clang
             cpp_compiler: clang++
             ftn_compiler: gfortran
             device: cpu
+            supplied_libtorch: false
+          - c_compiler: gcc
+            cpp_compiler: g++
+            ftn_compiler: gfortran
+            device: cpu
+            supplied_libtorch: true
 
     steps:
       - uses: actions/checkout@v4
@@ -52,34 +57,44 @@ jobs:
         id: cuda-toolkit
         if: ${{ matrix.device == 'cuda' }}
         with:
-          cuda: '12.8.0'
+          cuda: '12.6.0'
           method: 'network'
 
       - name: Download libtorch
         id: libtorch
         shell: bash
         run: |
-          case ${{ matrix.device }} in
-            "cpu")
-              LIBTORCH_URL="https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.1.0%2Bcpu.zip"
-              ;;
-            "cuda")
-              LIBTORCH_URL="https://download.pytorch.org/libtorch/cu121/libtorch-cxx11-abi-shared-with-deps-2.1.0%2Bcu121.zip"
-              echo "cmake_flags=-DUSE_CUDA=ON" >> "$GITHUB_OUTPUT"
-              ;;
-            *)
-            echo -n "unknown option for device"
-            exit 1
-            ;;
-          esac  
-
-          # download & extract libtorch
-          wget -q $LIBTORCH_URL -O libtorch.zip
-          unzip -q libtorch.zip
-          rm libtorch.zip
+          if [[ ${{ matrix.device }} == "cuda" ]]; then
+            echo "cmake_flags=-DMACE_WITH_CUDA=ON" >> "$GITHUB_OUTPUT"
+          fi
           
-          # save path for later steps
-          echo "path=$(realpath libtorch)" >> "$GITHUB_OUTPUT"
+          if [[ ${{ matrix.supplied_libtorch }} == 'true' ]]; then
+            echo Supplying libtorch
+            case ${{ matrix.device }} in
+              "cpu")
+                LIBTORCH_URL="https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.6.0%2Bcpu.zip"
+                ;;
+              "cuda")
+                LIBTORCH_URL="https://download.pytorch.org/libtorch/cu126/libtorch-cxx11-abi-shared-with-deps-2.6.0%2Bcu126.zip"
+                ;;
+              *)
+              echo -n "unknown option for device"
+              exit 1
+              ;;
+            esac
+          
+            # download & extract libtorch
+            wget -q $LIBTORCH_URL -O libtorch.zip
+            unzip -q libtorch.zip
+            rm libtorch.zip
+          
+            # save path for later steps
+            echo "path=$(realpath libtorch)" >> "$GITHUB_OUTPUT"
+          else
+            echo Not supplying libtorch, let CMake download it
+            echo "path=" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Configure CMake
         run: >
           cmake -B ${{ steps.strings.outputs.build-output-dir }}
@@ -89,6 +104,8 @@ jobs:
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           -DCMAKE_PREFIX_PATH=${{ steps.libtorch.outputs.path }}
           ${{ steps.libtorch.outputs.cmake_flags }}
+          -DMACE_WITH_TESTS=ON
+          -DMACE_WITH_EXAMPLES=ON
           -S ${{ github.workspace }}
 
       - name: Build

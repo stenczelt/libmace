@@ -6,10 +6,16 @@ project(mace
 # -----------------------------------------------------------------------------
 # CMake options - build arguments
 # -----------------------------------------------------------------------------
-option(USE_CUDA "Compile with CUDA support" OFF)
-option(WITH_TESTS "Compile test suite" OFF)
-option(WITH_EXAMPLES "Compile example programs" OFF)
+option(MACE_WITH_CUDA "Compile with CUDA support" OFF)
+option(MACE_WITH_MPI "Compile with MPI support" ON)
+option(MACE_WITH_TESTS "Compile test suite" OFF)
+option(MACE_WITH_EXAMPLES "Compile example programs" OFF)
 
+set(MACE_TORCH_VERSION "2.6.0" CACHE STRING "libtorch version to use if downloading")
+
+if (NOT MACE_WITH_MPI)
+    message(FATAL_ERROR "non-MPI build it not supported yet!")
+endif ()
 # -----------------------------------------------------------------------------
 # Languages
 # -----------------------------------------------------------------------------
@@ -24,19 +30,67 @@ set(CMAKE_Fortran_FORMAT FREE)
 set(CMAKE_Fortran_STANDARD f2003)
 
 # CUDA
-if (USE_CUDA)
+if (MACE_WITH_CUDA)
     enable_language(CUDA)
     set(CMAKE_CUDA_STANDARD 17)
     find_package(CUDA REQUIRED)
+
+    # Choose channel for libtorch
+    if (${CUDA_VERSION_MAJOR} EQUAL 11)
+        set(MACE_TORCH_ARCH "cu114")
+    elseif (${CUDA_VERSION_MAJOR} EQUAL 12)
+        set(MACE_TORCH_ARCH "cu126")
+    else ()
+        message(FATAL_ERROR "CUDA version not recognised.")
+    endif ()
 else ()
     message(STATUS "Not using CUDA.")
+    set(MACE_TORCH_ARCH "cpu")
 endif ()
+message(STATUS "chosen MACE_TORCH_ARCH: " ${MACE_TORCH_ARCH}) # DEBUG
 
 # -----------------------------------------------------------------------------
 # Dependencies
 # -----------------------------------------------------------------------------
 
-# include LibTorch
+# First, try to find an existing LibTorch installation
+find_package(Torch QUIET)
+
+if (NOT Torch_FOUND)
+    include(FetchContent)
+    if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.24.0")
+        cmake_policy(SET CMP0135 NEW)
+    endif ()
+
+    # Determine the appropriate URL based on platform and CUDA option
+    if (APPLE)
+        # MacOS (arm) CPU version
+        set(LIBTORCH_URL "https://download.pytorch.org/libtorch/cpu/libtorch-macos-arm64-${MACE_TORCH_VERSION}.zip")
+        message(STATUS "Downloading LibTorch MacOS CPU version")
+    elseif (MACE_WITH_CUDA)
+        # CUDA version
+        set(LIBTORCH_URL "https://download.pytorch.org/libtorch/${MACE_TORCH_ARCH}/libtorch-cxx11-abi-shared-with-deps-${MACE_TORCH_VERSION}%2B${MACE_TORCH_ARCH}.zip")
+        message(STATUS "Downloading LibTorch CUDA version")
+    else ()
+        # CPU version (default)
+        set(LIBTORCH_URL "https://download.pytorch.org/libtorch/${MACE_TORCH_ARCH}/libtorch-cxx11-abi-shared-with-deps-${MACE_TORCH_VERSION}%2B${MACE_TORCH_ARCH}.zip")
+        message(STATUS "Downloading LibTorch CPU version")
+    endif ()
+
+    # Fetch LibTorch
+    FetchContent_Declare(
+            libtorch
+            URL ${LIBTORCH_URL}
+    )
+    FetchContent_MakeAvailable(libtorch)
+
+    # Add to path so find_package can find it later
+    list(APPEND CMAKE_PREFIX_PATH "${libtorch_SOURCE_DIR}")
+else ()
+    message(STATUS "Found existing LibTorch installation")
+endif ()
+
+# Try find_package again to properly set up targets
 find_package(Torch REQUIRED)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
@@ -93,7 +147,7 @@ target_link_libraries(mace_fortran INTERFACE
 # -----------------------------------------------------------------------------
 # Tests & Examples
 # -----------------------------------------------------------------------------
-if (WITH_TESTS)
+if (MACE_WITH_TESTS)
     enable_testing()
 
     # library for testing: internals are available to test code as well
@@ -107,7 +161,7 @@ if (WITH_TESTS)
 endif ()
 
 # examples
-if (WITH_EXAMPLES)
+if (MACE_WITH_EXAMPLES)
     add_subdirectory(examples)
 endif ()
 
