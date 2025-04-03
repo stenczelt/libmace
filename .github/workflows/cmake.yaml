@@ -4,7 +4,6 @@ on:
   push:
   pull_request:
     branches: [ "main" ]
-# todo: let CMake download libtorch as well
 # todo: build example projects
 jobs:
   build:
@@ -58,7 +57,7 @@ jobs:
         id: cuda-toolkit
         if: ${{ matrix.device == 'cuda' }}
         with:
-          cuda: '12.8.0'
+          cuda: '12.6.0'
           method: 'network'
 
       - name: Download libtorch
