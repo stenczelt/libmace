@@ -20,23 +20,27 @@ jobs:
       fail-fast: false
 
       matrix:
-        os: [ ubuntu-24.04 ]
-        c_compiler: [ gcc ]
-        ftn_compiler: [ gfortran ]
         device: [ cpu, cuda ]
-        supplied_libtorch: [ false ]
         include:
           - os: ubuntu-latest
             c_compiler: gcc
             cpp_compiler: g++
-          - os: ubuntu-latest
-            c_compiler: clang
-            cpp_compiler: clang++
+            ftn_compiler: gfortran
             device: cpu
+            supplied_libtorch: true
+
           - os: ubuntu-latest
             c_compiler: gcc
             cpp_compiler: g++
-            supplied_libtorch: true
+            ftn_compiler: gfortran
+            supplied_libtorch: false
+
+          - os: ubuntu-latest
+            c_compiler: clang
+            cpp_compiler: clang++
+            ftn_compiler: gfortran
+            device: cpu
+            supplied_libtorch: false
 
     steps:
       - uses: actions/checkout@v4
