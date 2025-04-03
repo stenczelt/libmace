@@ -35,11 +35,27 @@ if (MACE_USE_CUDA)
     set(CMAKE_CUDA_STANDARD 17)
     find_package(CUDA REQUIRED)
     set(MACE_TORCH_ARCH "cu${CUDA_VERSION_MAJOR}${CUDA_VERSION_MINOR}")
+
+    # Choose channel for libtorch
+    if (${CUDA_VERSION_MAJOR} < 11)
+        message(FATAL_ERROR "CUDA<11 not supported by target torch version")
+    elseif (${CUDA_VERSION_MAJOR} == 11)
+        set(MACE_TORCH_ARCH "cu114")
+    elseif (${CUDA_VERSION_MAJOR} == 12)
+        if (${CUDA_VERSION_MINOR} >= 6)
+            set(MACE_TORCH_ARCH "cu126")
+        else ()
+            set(MACE_TORCH_ARCH "cu124")
+        endif ()
+    else ()
+        message(FATAL_ERROR "CUDA>12 not recognised.")
+    endif ()
+
 else ()
     message(STATUS "Not using CUDA.")
     set(MACE_TORCH_ARCH "cpu")
 endif ()
-message(STATUS "MACE_TORCH_ARCH" ${MACE_TORCH_ARCH}) # DEBUG
+message(STATUS "chosen MACE_TORCH_ARCH: " ${MACE_TORCH_ARCH}) # DEBUG
 
 # -----------------------------------------------------------------------------
 # Dependencies
