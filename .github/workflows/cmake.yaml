@@ -28,13 +28,11 @@ jobs:
             ftn_compiler: gfortran
             device: cpu
             supplied_libtorch: true
-
           - os: ubuntu-latest
             c_compiler: gcc
             cpp_compiler: g++
             ftn_compiler: gfortran
             supplied_libtorch: false
-
           - os: ubuntu-latest
             c_compiler: clang
             cpp_compiler: clang++
