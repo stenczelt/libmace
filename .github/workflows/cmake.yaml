@@ -4,7 +4,8 @@ on:
   push:
   pull_request:
     branches: [ "main" ]
-
+# todo: let CMake download libtorch as well
+# todo: build example projects
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -19,19 +20,23 @@ jobs:
       fail-fast: false
 
       matrix:
-        os: [ ubuntu-latest ] # ubuntu-24.04
-        c_compiler: [ gcc ]  # [ gcc, clang ]
+        os: [ ubuntu-24.04 ]
+        c_compiler: [ gcc ]
+        ftn_compiler: [ gfortran ]
         device: [ cpu, cuda ]
+        supplied_libtorch: [ false ]
         include:
           - os: ubuntu-latest
             c_compiler: gcc
             cpp_compiler: g++
-            ftn_compiler: gfortran
           - os: ubuntu-latest
             c_compiler: clang
             cpp_compiler: clang++
-            ftn_compiler: gfortran
             device: cpu
+          - os: ubuntu-latest
+            c_compiler: gcc
+            cpp_compiler: g++
+            supplied_libtorch: true
 
     steps:
       - uses: actions/checkout@v4
@@ -59,27 +64,37 @@ jobs:
         id: libtorch
         shell: bash
         run: |
-          case ${{ matrix.device }} in
-            "cpu")
-              LIBTORCH_URL="https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.6.0%2Bcpu.zip"
-              ;;
-            "cuda")
-              LIBTORCH_URL="https://download.pytorch.org/libtorch/cu126/libtorch-cxx11-abi-shared-with-deps-2.6.0%2Bcu126.zip"
-              echo "cmake_flags=-DMACE_USE_CUDA=ON" >> "$GITHUB_OUTPUT"
-              ;;
-            *)
-            echo -n "unknown option for device"
-            exit 1
-            ;;
-          esac  
-
-          # download & extract libtorch
-          wget -q $LIBTORCH_URL -O libtorch.zip
-          unzip -q libtorch.zip
-          rm libtorch.zip
+          if [[ ${{ matrix.device }} == "cuda" ]]; then
+            echo "cmake_flags=-DMACE_USE_CUDA=ON" >> "$GITHUB_OUTPUT"
+          fi
           
-          # save path for later steps
-          echo "path=$(realpath libtorch)" >> "$GITHUB_OUTPUT"
+          if [[ ${{ matrix.supplied_libtorch }} ]]; then
+            echo Supplying libtorch
+            case ${{ matrix.device }} in
+              "cpu")
+                LIBTORCH_URL="https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.6.0%2Bcpu.zip"
+                ;;
+              "cuda")
+                LIBTORCH_URL="https://download.pytorch.org/libtorch/cu126/libtorch-cxx11-abi-shared-with-deps-2.6.0%2Bcu126.zip"
+                ;;
+              *)
+              echo -n "unknown option for device"
+              exit 1
+              ;;
+            esac
+          
+            # download & extract libtorch
+            wget -q $LIBTORCH_URL -O libtorch.zip
+            unzip -q libtorch.zip
+            rm libtorch.zip
+          
+            # save path for later steps
+            echo "path=$(realpath libtorch)" >> "$GITHUB_OUTPUT"
+          else
+            echo Not supplying libtorch, let CMake download it
+            echo "path=" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Configure CMake
         run: >
           cmake -B ${{ steps.strings.outputs.build-output-dir }}
