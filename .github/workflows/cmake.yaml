@@ -8,7 +8,7 @@ on:
 # todo: build example projects
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-24.04
 
     # non-parametrized settings
     env:
@@ -20,24 +20,20 @@ jobs:
       fail-fast: false
 
       matrix:
-        os: [ ubuntu-latest ] # ubuntu-24.04
         c_compiler: [ gcc ]  # [ gcc, clang ]
         supplied_libtorch: [ false ]  # [ gcc, clang ]
         device: [ cpu, cuda ]
         include:
-          - os: ubuntu-latest
-            c_compiler: gcc
+          - c_compiler: gcc
             cpp_compiler: g++
             ftn_compiler: gfortran
             supplied_libtorch: false
-          - os: ubuntu-latest
-            c_compiler: clang
+          - c_compiler: clang
             cpp_compiler: clang++
             ftn_compiler: gfortran
             device: cpu
             supplied_libtorch: false
-          - os: ubuntu-latest
-            c_compiler: gcc
+          - c_compiler: gcc
             cpp_compiler: g++
             ftn_compiler: gfortran
             device: cpu
@@ -73,7 +69,7 @@ jobs:
             echo "cmake_flags=-DMACE_USE_CUDA=ON" >> "$GITHUB_OUTPUT"
           fi
           
-          if [[ ${{ matrix.supplied_libtorch }} ]]; then
+          if [[ ${{ matrix.supplied_libtorch }} == 'true' ]]; then
             echo Supplying libtorch
             case ${{ matrix.device }} in
               "cpu")
