@@ -6,7 +6,7 @@ project(mace
 # -----------------------------------------------------------------------------
 # CMake options - build arguments
 # -----------------------------------------------------------------------------
-option(MACE_USE_CUDA "Compile with CUDA support" OFF)
+option(MACE_WITH_CUDA "Compile with CUDA support" OFF)
 option(MACE_WITH_MPI "Compile with MPI support" ON)
 option(MACE_WITH_TESTS "Compile test suite" OFF)
 option(MACE_WITH_EXAMPLES "Compile example programs" OFF)
@@ -30,11 +30,10 @@ set(CMAKE_Fortran_FORMAT FREE)
 set(CMAKE_Fortran_STANDARD f2003)
 
 # CUDA
-if (MACE_USE_CUDA)
+if (MACE_WITH_CUDA)
     enable_language(CUDA)
     set(CMAKE_CUDA_STANDARD 17)
     find_package(CUDA REQUIRED)
-    set(MACE_TORCH_ARCH "cu${CUDA_VERSION_MAJOR}${CUDA_VERSION_MINOR}")
 
     # Choose channel for libtorch
     if (${CUDA_VERSION_MAJOR} EQUAL 11)
@@ -44,7 +43,6 @@ if (MACE_USE_CUDA)
     else ()
         message(FATAL_ERROR "CUDA version not recognised.")
     endif ()
-
 else ()
     message(STATUS "Not using CUDA.")
     set(MACE_TORCH_ARCH "cpu")
@@ -69,7 +67,7 @@ if (NOT Torch_FOUND)
         # MacOS (arm) CPU version
         set(LIBTORCH_URL "https://download.pytorch.org/libtorch/cpu/libtorch-macos-arm64-${MACE_TORCH_VERSION}.zip")
         message(STATUS "Downloading LibTorch MacOS CPU version")
-    elseif (MACE_USE_CUDA)
+    elseif (MACE_WITH_CUDA)
         # CUDA version
         set(LIBTORCH_URL "https://download.pytorch.org/libtorch/${MACE_TORCH_ARCH}/libtorch-cxx11-abi-shared-with-deps-${MACE_TORCH_VERSION}%2B${MACE_TORCH_ARCH}.zip")
         message(STATUS "Downloading LibTorch CUDA version")

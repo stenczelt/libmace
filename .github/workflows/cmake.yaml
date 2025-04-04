@@ -65,7 +65,7 @@ jobs:
         shell: bash
         run: |
           if [[ ${{ matrix.device }} == "cuda" ]]; then
-            echo "cmake_flags=-DMACE_USE_CUDA=ON" >> "$GITHUB_OUTPUT"
+            echo "cmake_flags=-DMACE_WITH_CUDA=ON" >> "$GITHUB_OUTPUT"
           fi
           
           if [[ ${{ matrix.supplied_libtorch }} == 'true' ]]; then
