@@ -37,9 +37,9 @@ if (MACE_USE_CUDA)
     set(MACE_TORCH_ARCH "cu${CUDA_VERSION_MAJOR}${CUDA_VERSION_MINOR}")
 
     # Choose channel for libtorch
-    if (${CUDA_VERSION_MAJOR} == 11)
+    if (${CUDA_VERSION_MAJOR} EQUAL 11)
         set(MACE_TORCH_ARCH "cu114")
-    elseif (${CUDA_VERSION_MAJOR} == 12)
+    elseif (${CUDA_VERSION_MAJOR} EQUAL 12)
         set(MACE_TORCH_ARCH "cu126")
     else ()
         message(FATAL_ERROR "CUDA version not recognised.")
