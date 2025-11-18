@@ -13,8 +13,6 @@ env:
   build_type: Release
   build_dir: build
   install_dir: install
-  # version: this should come from the package
-  libmace_VERSION: "25.03.2"
 
 jobs:
   build-ubuntu:
@@ -65,17 +63,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Extract version from CMakeLists.txt
+        id: get_version
+        run: |
+          VERSION=$(grep -oP '(?<=VERSION )\d+\.\d+\.\d+' CMakeLists.txt | head -1)
+          echo "libmace_VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "Extracted version: ${VERSION}"
+
       - name: Construct filename
         run: |
           PLATFORM="x86_64"
-          
+
           # modifier: for the end of the filename, note includes `-` at the start
           if [[ "${{ matrix.libtorch_cuda }}" == "cpu" ]]; then
             MODIFIER="-${{ matrix.mpi_vendor }}"
           else
             MODIFIER="-${{ matrix.libtorch_cuda }}-${{ matrix.mpi_vendor }}"
           fi
-          
+
           FILENAME="libmace-${PLATFORM}-${{ env.libmace_VERSION }}-libtorch${{ matrix.libtorch_version }}${MODIFIER}.tar.gz"
           echo "TAR_FILENAME=$FILENAME" >> $GITHUB_ENV
           echo "Generated filename: $FILENAME"
@@ -153,11 +158,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Extract version from CMakeLists.txt
+        id: get_version
+        run: |
+          VERSION=$(grep -oE 'VERSION [0-9]+\.[0-9]+\.[0-9]+' CMakeLists.txt | head -1 | awk '{print $2}')
+          echo "libmace_VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "Extracted version: ${VERSION}"
+
       - name: Construct filename
         run: |
           PLATFORM="macos-arm64"
           MODIFIER=""
-          
+
           FILENAME="libmace-${PLATFORM}-${{ env.libmace_VERSION }}-libtorch${{ matrix.libtorch_version }}${MODIFIER}.tar.gz"
           echo "TAR_FILENAME=$FILENAME" >> $GITHUB_ENV
           echo "Generated filename: $FILENAME"
