@@ -3,7 +3,7 @@
 module mace
 
   use iso_c_binding
-  use mpi_f08
+  use mace_comms
 
   implicit none
 
@@ -11,17 +11,12 @@ module mace
   public :: MaceModel, dp
 
   integer, parameter :: dp = selected_real_kind(15, 300)
-  integer, parameter :: MPI_ROOT_ID = 0
 
   ! MACE Model type with member methods
   type MaceModel
     private
     type(c_ptr) :: ptr ! pointer to the C class
-    ! MPI
-    logical :: use_mpi
-    type(MPI_Comm) :: comm
-    integer :: rank ! MPI rank
-    logical :: on_root ! am I the MPI root process in this communicator?
+    type(CommEnv) :: comm_env ! communication environment
   contains
     ! member functions
     procedure :: reload => mace_reload
@@ -33,7 +28,7 @@ module mace
   ! MACE Model constructor
   interface MaceModel
     procedure mace_init_mpi
-    procedure mace_init_no_mpi
+    procedure mace_init_serial
     procedure mace_init_old_mpi
   end interface
 
@@ -85,14 +80,6 @@ module mace
       type(c_ptr), value :: virial
     end subroutine cmace_calculate
 
-    ! UNIX-only C's sleep routine
-    function usleep(useconds) bind(c)
-      use iso_c_binding
-      implicit none
-      integer(kind = c_int32_t), value :: useconds
-      integer(kind = c_int) :: usleep ! micro seconds
-    end function usleep
-
   end interface
 
   ! type conversions Fortran -> C
@@ -105,60 +92,47 @@ contains
   ! ----------------------------------------------------------------------------
   ! Ftn versions of class member functions
   ! ----------------------------------------------------------------------------
-  function mace_init_mpi(model_path, comm)  result(model)
+  function mace_init_mpi(model_path, mpi_comm)  result(model)
     implicit none
     type(MaceModel) :: model
 
     character(len = *), intent(in) :: model_path
-    type(MPI_Comm), intent(in) :: comm
+    type(MPI_Comm), intent(in) :: mpi_comm
 
-    integer :: status
-
-    ! initialise MACE model w/o MPI
-    model%use_mpi = .true.
-    model%comm = comm
-    call MPI_Comm_rank(model%comm, model%rank, status)
+    ! initialise communication environment
+    model%comm_env = comm_env_init(mpi_comm)
 
     ! initialise model on ROOT ONLY
-    model%on_root = model%rank == MPI_ROOT_ID
-    if (model%on_root) model%ptr = cmace_init(f2c(model_path))
+    if (model%comm_env%is_root_process()) model%ptr = cmace_init(f2c(model_path))
   end function mace_init_mpi
 
-  function mace_init_no_mpi(model_path) result(model)
-    ! No MPI
+  function mace_init_serial(model_path) result(model)
+    ! Serial (no MPI)
     implicit none
     type(MaceModel) :: model
 
     character(len = *), intent(in) :: model_path
 
-    ! initialise MACE model w/o MPI
-    model%use_mpi = .false.
-    model%comm = MPI_comm_null
-    model%rank = MPI_ROOT_ID
+    ! initialise communication environment (serial)
+    model%comm_env = comm_env_init()
 
-    ! initialise model on ROOT ONLY
-    model%on_root = model%rank == MPI_ROOT_ID
-    if (model%on_root) model%ptr = cmace_init(f2c(model_path))
-  end function mace_init_no_mpi
+    ! initialise model
+    model%ptr = cmace_init(f2c(model_path))
+  end function mace_init_serial
 
-  function mace_init_old_mpi(model_path, comm)  result(model)
+  function mace_init_old_mpi(model_path, mpi_comm_int)  result(model)
     ! OLD MPI: `include "mpif.h"` / `use mpi` where communicators are integers
     implicit none
     type(MaceModel) :: model
 
     character(len = *), intent(in) :: model_path
-    integer, intent(in) :: comm
+    integer, intent(in) :: mpi_comm_int
 
-    integer :: status
-
-    ! initialise MACE model w/o MPI
-    model%use_mpi = .true.
-    model%comm%MPI_VAL = comm
-    call MPI_Comm_rank(model%comm, model%rank, status)
+    ! initialise communication environment
+    model%comm_env = comm_env_init(mpi_comm_int)
 
     ! initialise model on ROOT ONLY
-    model%on_root = model%rank == MPI_ROOT_ID
-    if (model%on_root) model%ptr = cmace_init(f2c(model_path))
+    if (model%comm_env%is_root_process()) model%ptr = cmace_init(f2c(model_path))
   end function mace_init_old_mpi
 
 
@@ -166,14 +140,14 @@ contains
     implicit none
     class(MaceModel), intent(in) :: self
     ! body
-    if (self%on_root) call cmace_reload(self%ptr)
+    if (self%comm_env%is_root_process()) call cmace_reload(self%ptr)
   end subroutine mace_reload
 
   subroutine mace_print(self)
     implicit none
     class(MaceModel), intent(in) :: self
     ! body
-    if (self%on_root) call cmace_print(self%ptr)
+    if (self%comm_env%is_root_process()) call cmace_print(self%ptr)
   end subroutine mace_print
 
   subroutine mace_calculate(self, calc_virial, n_atoms, cell, pbc, atomic_numbers, &
@@ -193,20 +167,11 @@ contains
     real(dp), dimension(3, n_atoms), intent(out) :: forces
     real(dp), dimension(6), intent(out) :: virial
 
-    ! local
-    integer :: status
-
     ! calculate on root process
-    if (self%on_root) call perform_calculation()
+    if (self%comm_env%is_root_process()) call perform_calculation()
 
-    ! if using MPI then broadcast the results
-    if (self%use_mpi) then
-      call mpi_non_busy_barrier(self%comm, 10000)
-      call MPI_bcast(total_energy, 1, MPI_double_precision, MPI_ROOT_ID, self%comm, status)
-      call MPI_bcast(node_energy, n_atoms, MPI_double_precision, MPI_ROOT_ID, self%comm, status)
-      call MPI_bcast(forces, n_atoms * 3, MPI_double_precision, MPI_ROOT_ID, self%comm, status)
-      call MPI_bcast(virial, 6, MPI_double_precision, MPI_ROOT_ID, self%comm, status)
-    end if
+    ! broadcast the results to all processes
+    call self%comm_env%broadcast_results(total_energy, node_energy, forces, virial)
 
   contains
 
@@ -258,40 +223,6 @@ contains
 
       return
     end subroutine perform_calculation
-
-    subroutine mpi_non_busy_barrier(comm, iternval_usec)
-      ! non busy-waiting waiting barrier, polls at an interval instead
-      implicit none
-
-      type(MPI_Comm) :: comm
-      integer, intent(in) :: iternval_usec ! interval in micro-second
-
-      type(MPI_Request) :: barrier_id
-      TYPE(MPI_Status) :: stat
-      integer :: ierror, dummy
-      logical :: completed
-
-      ! Start a barrier and get a handle
-      call MPI_Ibarrier(comm, barrier_id, ierror)
-
-      if (ierror/=MPI_success) then
-        write(*, *) 'MPI_Ibarrier failed.'
-        call raise()
-      end if
-
-      completed = .false.
-
-      ! Check if the barrier is completed and if not, sleep for wait time and
-      do while (.not. completed)
-        call MPI_Test(barrier_id, completed, stat, ierror)
-        if (ierror/=MPI_success) then
-          write(*, *) 'Error mpi_non_busy_barrier: MPI_Test failed.'
-          call raise()
-        end if
-        dummy = usleep(iternval_usec * 1000)
-      end do
-
-    end subroutine mpi_non_busy_barrier
 
   end subroutine mace_calculate
 

@@ -130,8 +130,6 @@ MACE::calculate(
         node_attrs[i_atom][z_to_mace_type[z]] = 1.0;
         i_atom++;
     }
-    for (int itmp = 0; itmp < n_nodes; itmp++) {
-    }
 
     // ----- mask for ghost -----
     // irrelevant for us, ghost atoms are not supported, so all are 1.

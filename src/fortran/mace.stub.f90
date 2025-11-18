@@ -1,5 +1,5 @@
 ! Created by Tamas K Stenczel on 2024/07/08.
-! Stub module: use instead of mace.f90 and adapt to your code's error hadnling.
+! Stub module: use instead of mace.f90 and adapt to your code's error handling.
 !
 ! usage: you can copy this into the host code & implent `raise()` as you wish, e.g.
 ! handling exit across all MPI processes, etc. and use in place of the library when

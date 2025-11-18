@@ -13,9 +13,6 @@ option(MACE_WITH_EXAMPLES "Compile example programs" OFF)
 
 set(MACE_TORCH_VERSION "2.6.0" CACHE STRING "libtorch version to use if downloading")
 
-if (NOT MACE_WITH_MPI)
-    message(FATAL_ERROR "non-MPI build it not supported yet!")
-endif ()
 # -----------------------------------------------------------------------------
 # Languages
 # -----------------------------------------------------------------------------
@@ -56,6 +53,13 @@ message(STATUS "chosen MACE_TORCH_ARCH: " ${MACE_TORCH_ARCH}) # DEBUG
 # First, try to find an existing LibTorch installation
 find_package(Torch QUIET)
 
+# Track whether we're using system-provided Torch or downloading it
+if (Torch_FOUND)
+    set(MACE_USE_SYSTEM_TORCH ON)
+else ()
+    set(MACE_USE_SYSTEM_TORCH OFF)
+endif ()
+
 if (NOT Torch_FOUND)
     include(FetchContent)
     if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.24.0")
@@ -95,7 +99,12 @@ find_package(Torch REQUIRED)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
 # MPI
-find_package(MPI REQUIRED)
+if (MACE_WITH_MPI)
+    find_package(MPI REQUIRED)
+    message(STATUS "Building with MPI support")
+else ()
+    message(STATUS "Building without MPI support (serial only)")
+endif ()
 
 # -----------------------------------------------------------------------------
 # Our code
@@ -132,17 +141,32 @@ else ()
 endif ()
 
 # -----------------------------
-# MACE Fortran module: interface only, needs MPI
+# MACE Fortran module: interface only
+# Select communication module based on MPI support
+if (MACE_WITH_MPI)
+    set(MACE_COMMS_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/src/fortran/mace_comms_mpi.f90)
+else ()
+    set(MACE_COMMS_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/src/fortran/mace_comms_serial.f90)
+endif ()
+
 add_library(mace_fortran INTERFACE)
-target_sources(mace_fortran INTERFACE src/fortran/mace.f90)
+target_sources(mace_fortran INTERFACE
+        ${MACE_COMMS_SOURCE}
+        src/fortran/mace.f90
+)
 target_include_directories(mace_fortran INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/fortran
-        ${MPI_Fortran_INCLUDE_DIRS}
 )
-target_link_libraries(mace_fortran INTERFACE
-        mace
-        ${MPI_Fortran_LIBRARIES}
-)
+target_link_libraries(mace_fortran INTERFACE mace)
+
+# Add MPI dependencies if enabled
+if (MACE_WITH_MPI)
+    target_include_directories(mace_fortran INTERFACE ${MPI_Fortran_INCLUDE_DIRS})
+    target_link_libraries(mace_fortran INTERFACE ${MPI_Fortran_LIBRARIES})
+endif ()
+
+# Mark that Fortran interface is built (for config file)
+set(MACE_BUILD_FORTRAN ON)
 
 # -----------------------------------------------------------------------------
 # Tests & Examples
@@ -199,6 +223,8 @@ install(DIRECTORY include/
 # install: F90 interface source
 install(FILES
         src/fortran/mace.f90
+        src/fortran/mace_comms_mpi.f90
+        src/fortran/mace_comms_serial.f90
         src/fortran/mace.stub.f90
         DESTINATION include
 )
